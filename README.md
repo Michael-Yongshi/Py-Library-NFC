@@ -23,7 +23,7 @@ https://github.com/StevenTso/ACS-ACR122U-NFC-Reader
 https://flomio.com/forums/topic/list-of-apdu-codes/
 https://www.eftlab.com/knowledge-base/complete-list-of-apdu-responses/
 
-
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #### sending commands with libnfc
 
 #### rfidiot.py
@@ -38,7 +38,7 @@ https://libusb.info/
 ```
 pip3 install --user nfcpy
 ```
-
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #### encoding with ndeflib
 encoding and decoding messages from NDEF format (nfc data exchange format)
 ```

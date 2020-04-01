@@ -1,0 +1,19 @@
+{
+    "get_card_uid": [
+        "0XFF",
+        "0XCA",
+        "0X00",
+        "0X00",
+        "0X00"
+    ],
+    "get_card_data": [
+        "0XFF",
+        "0XB0",
+        "0X00"
+    ],
+    "set_card_data": [
+        "0XFF",
+        "0XD6",
+        "0X00"
+    ]
+}
