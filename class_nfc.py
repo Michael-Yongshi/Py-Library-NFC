@@ -271,16 +271,17 @@ class NDEFinterpreter(object):
 
         print(f"trying to decode {response}")
         message = ""
-        for i in response:
-            print(f"i = {i}")
-            string = DecodingCharacter.integer_to_character(i)
-            # integer = int(str(i), 16)
-            # print(f"integer = {integer}")
-            # part = integer
-            # part = bytes(integer).decode('accsi')
-            # print(f"part = {part}")
-            # part = bytes.fromhex(str(i)).decode('utf-8')
-            message += string
+        for page in response:
+            for i in page:
+                print(f"i = {i}")
+                string = DecodingCharacter.integer_to_character(i)
+                # integer = int(str(i), 16)
+                # print(f"integer = {integer}")
+                # part = integer
+                # part = bytes(integer).decode('accsi')
+                # print(f"part = {part}")
+                # part = bytes.fromhex(str(i)).decode('utf-8')
+                message += string
         
         print(f"message {message}")
 
