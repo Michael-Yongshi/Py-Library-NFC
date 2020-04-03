@@ -11,6 +11,12 @@ from smartcard.CardRequest import CardRequest
 from smartcard.CardConnection import CardConnection
 from smartcard.System import readers
 
+from .class_conversions import (
+    ConvertingNumbers,
+    EncodingCharacter,
+    DecodingCharacter,
+)
+
 class NFCmethods(object):
     def __init__(self):
         super().__init__()
@@ -231,6 +237,55 @@ class NFCmethods(object):
 
         return rfu
 
+class NDEFinterpreter(object):
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def decode_bytes(response):
+
+        print(f"trying to decode with ndeflib {response}")
+
+        hexstring = ""
+        for i in response:
+            hexstring += i
+        print(f"hexstring = {hexstring}")
+        hexstr = '900000100000500000'
+        print(f"example hexstr = {hexstr}")
+
+        octets = bytearray.fromhex(hexstr)
+
+        decoded_message = ""
+        for record in message_decoder(octets):
+            decoded_part = str(record)
+            print(f"decoded part = {decoded_part}")
+            decoded_message += decoded_part
+
+        decoded_message = message_decoder(response)
+        print(f"decoded message: {decoded_message}")
+
+        return decoded_message
+
+    @staticmethod
+    def decode_message(response):
+
+        print(f"trying to decode {response}")
+        message = ""
+        for i in response:
+            print(f"i = {i}")
+            string = DecodingCharacter.integer_to_character(i)
+            # integer = int(str(i), 16)
+            # print(f"integer = {integer}")
+            # part = integer
+            # part = bytes(integer).decode('accsi')
+            # print(f"part = {part}")
+            # part = bytes.fromhex(str(i)).decode('utf-8')
+            message += string
+        
+        print(f"message {message}")
+
+        return message
+
 class NFCconnection(object):
     def __init__(self, cardservice):
         super().__init__()
@@ -317,16 +372,15 @@ class NFCconnection(object):
 
         return response, responsehex
 
-    def get_card_data(self):
+    def get_card_data(self, length):
         
-        data = ""
-        length = 16
+        data = []
         page = 1
         while page > 0 and page < 10:
             try:
                 readdata = self.get_card_page(page, length)
                 print(f"retrieving page {page} resulted in {readdata}")
-                data += readdata
+                data += [readdata]
                 page += 1
             except:
                 page = 0
