@@ -272,18 +272,13 @@ class NDEFinterpreter(object):
         print(f"trying to decode {response}")
         message = ""
         for page in response:
+            pagestring = ""
             for i in page:
-                print(f"i = {i}")
-                string = DecodingCharacter.integer_to_character(i)
-                # integer = int(str(i), 16)
-                # print(f"integer = {integer}")
-                # part = integer
-                # part = bytes(integer).decode('accsi')
-                # print(f"part = {part}")
-                # part = bytes.fromhex(str(i)).decode('utf-8')
-                message += string
-        
-        print(f"message {message}")
+                character = DecodingCharacter.integer_to_character(i)
+                pagestring += character
+            # print(f"Page {page} decoded to {pagestring}")
+            message += pagestring
+        print(f"Decoded message: {message}")
 
         return message
 
@@ -377,10 +372,9 @@ class NFCconnection(object):
         
         data = []
         page = 1
-        while page > 0 and page < 10:
+        while page > 0 and page < 50:
             try:
                 readdata = self.get_card_page(page, length)
-                print(f"retrieving page {page} resulted in {readdata}")
                 data += [readdata]
                 page += 1
             except:
