@@ -12,117 +12,36 @@ from smartcard.CardConnection import CardConnection
 from smartcard.System import readers
 
 from .class_conversions import (
+    ConvertingArrays,
     ConvertingNumbers,
     EncodingCharacter,
     DecodingCharacter,
 )
 
-class NFCmethods(object):
+class NFCreference(object):
     def __init__(self):
         super().__init__()
-
-    ################ create here a formatting class
-    @staticmethod
-    def bytes_to_hex(databytes):
-        """to hex method like in smartcard utils, except keeping the 0X prefixes and add as array"""
-        datahex = []
-
-        for i in databytes:
-            i_hexstring = hex(i)
-            i_formatted = i_hexstring.upper()
-            datahex += [i_formatted]
-
-        return datahex
-
-    @staticmethod
-    def hex_to_bytes(datahex):
-
-        bytelist = []
-        for hexstep in datahex: # iterate
-            byte = int(f"{hexstep}", 0) # get the bytecode of the 2 characters, 0 means let the compiler decide which base to use (0X equals a base of 16)
-            bytelist += [byte] # add to the byte array
-
-        return bytelist
-
-    @staticmethod
-    def bytes_to_hexstring(databytes):
-        """to hex method like in smartcard utils, except keeping the 0X prefixes and keep a space"""
-        datahexstring = ""
-
-        for i in databytes:
-            i_hexstring = hex(i) + " "
-            i_formatted = i_hexstring.upper()
-            datahexstring += i_formatted
-        
-        # strip last space
-        if datahexstring[-1:] == " ":
-            datahexstring = datahexstring[:-1]
-
-        return datahexstring
-
-    @staticmethod
-    def hexstring_to_bytes(datahexstring):
-
-        remove_spaces = datahexstring.replace(' ', '')
-        remove_tabs = remove_spaces.replace('	','')
-        remove_linespaces = remove_tabs.replace('\n', '')
-        data_formatted = remove_linespaces # [::-1] # to reverse the order
-
-        bytelist = []
-        for i in range(0, len(data_formatted), 2): # iterate with step 2, so first character, third, etc.
-            value = data_formatted[i:i+2] # get the two characters of this iteration, so first and second, third and fourth, etc.
-            byte = int(''.join(value), 16) # get the bytecode of the 2 characters
-            bytelist += [byte] # add to the byte array
-
-        return bytelist
-
-    ################ create here an apdu methods class
-    @staticmethod
-    def set_apdu_table():
-        # set apdu table
-
-        datadict = {
-            "get_card_uid": ["0XFF", "0XCA", "0X00", "0X00", "0X00"],
-            "get_card_data": ["0XFF", "0XB0", "0X00"], # with fourth needing page / block to read and fifth the amount of bytes to read from that block
-            "set_card_data": ["0XFF", "0XD6", "0X00"], # with fourth needing page / block to write and fifth the amount of bytes to write from that block
-        }
-
-        print(datadict)
-
-        # set the paths to the apdu reference file
-        path = os.path.join(os.path.dirname(__file__), ".") # the same folder as caller
-        filename = "apdu_table"
-        complete_path = os.path.join(path, filename + ".json")
-
-        # open file and write json to it
-        with open(complete_path, 'w') as savefile:
-            # dump json data in the file
-            json.dump(datadict, savefile, indent=4)
 
     @staticmethod
     def get_apdu_command(function):
     
         # set the paths to the apdu reference file
-        path = os.path.join(os.path.dirname(__file__), ".") # the same folder as caller
-        filename = "apdu_table"
+        path = os.path.join(os.path.dirname(__file__), "references") # the same folder as caller
+        filename = "nfc_communication"
         complete_path = os.path.join(path, filename + ".json")
 
         # open file and return the dictionary
         with open(complete_path, 'r') as infile:
             datadict = json.load(infile)
 
-        try:
-            for key in datadict:
-                if key == function:
-                    apdu_command_hex = datadict[key]
-                    break
-            apdu_command = NFCmethods.hex_to_bytes(apdu_command_hex)
-        except: 
-            apdu_command = "No command found"
-
+        for key in datadict:
+            if key == "Mifare Ultralight":
+                for key2 in datadict[key]:
+                    if key2 == function:
+                        apdu_command = datadict[key][key2]["APDU_int"]
+                
         return apdu_command
 
-    ################ create here an ATR interpret class
     @staticmethod
     def get_card_block_length(atr):
         # the block length
@@ -147,7 +66,7 @@ class NFCmethods(object):
 
         # 9th position, pythons first position is 0, so 9-1=8
         atrsplit = atr[7:12]
-        rid_string = NFCmethods.bytes_to_hexstring(atrsplit)
+        rid_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
 
         # print(f"rid_string: {rid_string}")
 
@@ -173,7 +92,7 @@ class NFCmethods(object):
         # 
         # 9th position, pythons first position is 0, so 9-1=8
         atrsplit = atr[12:13]
-        standard_string = NFCmethods.bytes_to_hexstring(atrsplit)
+        standard_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
 
         # print(f"standard_string: {standard_string}")
 
@@ -203,7 +122,7 @@ class NFCmethods(object):
         }
 
         atrsplit = atr[13:15]
-        card_type_string = NFCmethods.bytes_to_hexstring(atrsplit)
+        card_type_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
 
         for key in card_types:
             if key == card_type_string:
@@ -225,7 +144,7 @@ class NFCmethods(object):
         }
 
         atrsplit = atr[15:19]
-        rfu_string = NFCmethods.bytes_to_hexstring(atrsplit)
+        rfu_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
 
         for key in rfus:
             if key == rfu_string:
@@ -242,45 +161,26 @@ class NDEFinterpreter(object):
         super().__init__()
 
     @staticmethod
-    def decode_bytes(response):
-
-        print(f"trying to decode with ndeflib {response}")
-
-        hexstring = ""
-        for i in response:
-            hexstring += i
-        print(f"hexstring = {hexstring}")
-        hexstr = '900000100000500000'
-        print(f"example hexstr = {hexstr}")
-
-        octets = bytearray.fromhex(hexstr)
-
-        decoded_message = ""
-        for record in message_decoder(octets):
-            decoded_part = str(record)
-            print(f"decoded part = {decoded_part}")
-            decoded_message += decoded_part
-
-        decoded_message = message_decoder(response)
-        print(f"decoded message: {decoded_message}")
-
-        return decoded_message
-
-    @staticmethod
     def decode_message(response):
 
         print(f"trying to decode {response}")
+        response_hex = []
         message = ""
         for page in response:
+            pagehex = []
             pagestring = ""
             for i in page:
+                hexa = ConvertingNumbers.int_to_hex(i)
+                pagehex += [hexa]
                 character = DecodingCharacter.integer_to_character(i)
                 pagestring += character
             # print(f"Page {page} decoded to {pagestring}")
+            response_hex += [pagehex]
             message += pagestring
+        print(f"response in hex: {response_hex}")
         print(f"Decoded message: {message}")
 
-        return message
+        return response_hex, message
 
 class NFCconnection(object):
     def __init__(self, cardservice):
@@ -305,22 +205,20 @@ class NFCconnection(object):
         print(f"connected to reader: {reader}")
         atr = cardservice.connection.getATR()
         print(f"connected to card (in bytes): {str(atr)}")
-        atrhex = NFCmethods.bytes_to_hex(atr)
+        atrhex = ConvertingArrays.array_conversion(atr, "int_to_hex")
         print(f"connected to card (in hex): {str(atrhex)}")
-        atrhexstring = NFCmethods.bytes_to_hexstring(atr)
-        print(f"connected to card (in hexstring): {str(atrhexstring)}")
         print("")
 
         # get some info out of ATR:
-        length = NFCmethods.get_card_block_length(atr)
+        length = NFCreference.get_card_block_length(atr)
         print(f"byte 7 // config data length: {length}")
-        rid = NFCmethods.get_card_rid(atr)
+        rid = NFCreference.get_card_rid(atr)
         print(f"bytes 8 - 12 // rid: {rid}")
-        standard = NFCmethods.get_card_standard(atr)
+        standard = NFCreference.get_card_standard(atr)
         print(f"byte 13 // standard: {standard}")
-        card_type = NFCmethods.get_card_type(atr)
+        card_type = NFCreference.get_card_type(atr)
         print(f"bytes 14 - 15 // cardtype: {card_type}")
-        rfu = NFCmethods.get_card_rfu(atr)
+        rfu = NFCreference.get_card_rfu(atr)
         print(f"bytes 16 - 19 // rfu: {rfu}")
 
         return NFCconnection(
@@ -354,7 +252,7 @@ class NFCconnection(object):
         
         # it basically returns the UID of the card
         # apdu_command = [0xFF, 0xCA, 0x00, 0x00, 0x00]
-        apdu_command = NFCmethods.get_apdu_command("get_card_uid")
+        apdu_command = NFCreference.get_apdu_command("Identify")
 
         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
         if sw1 == 144 and sw2 == 0:
@@ -362,19 +260,19 @@ class NFCconnection(object):
         else:
             print(f"Handshake failed!")
 
-        responsehex = NFCmethods.bytes_to_hex(response)
+        responsehex = ConvertingArrays.array_conversion(response, "int_to_hex")
 
         print(f"UID of card is: {response} with hex: {responsehex}")
 
         return response, responsehex
 
-    def get_card_data(self, length):
+    def get_card_data(self):
         
         data = []
         page = 1
-        while page > 0 and page < 50:
+        while page > 0 and page < 45:
             try:
-                readdata = self.get_card_page(page, length)
+                readdata = self.get_card_page(page)
                 data += [readdata]
                 page += 1
             except:
@@ -383,16 +281,17 @@ class NFCconnection(object):
         print(f"data of whole card is: {data}")
         return data
 
-    def get_card_page(self, page, length):
+    def get_card_page(self, page):
 
-        print(f"trying to retrieve page {page}")
-        apdu_command = NFCmethods.get_apdu_command("get_card_data")
-        apdu_command.append(page)
-        apdu_command.append(length)
+        apdu_command = NFCreference.get_apdu_command("Read")
+        apdu_command[3] = page
+
+        print(f"sending read command: {apdu_command}")
         # apdu_command = [0xFF, 0xB0, 0x00, int(page), 0x04]
 
+        # print(f"trying to retrieve page {page}")
         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-        print(f"response: {response} status words: {sw1} {sw2}")
+        # print(f"response: {response} status words: {sw1} {sw2}")
 
         return response
 
@@ -404,7 +303,7 @@ class NFCconnection(object):
         
     def set_card_page(self, page):
 
-        apdu_command = NFCmethods.get_apdu_command("set_card_page")
+        apdu_command = NFCreference.get_apdu_command("set_card_page")
         apdu_command.append(page)
         apdu_command.append(0x04)
         apdu_command_static = [0xFF, 0xD6, 0x00, int(page), 0x04]

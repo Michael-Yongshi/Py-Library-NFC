@@ -3,6 +3,34 @@
 # encoding characters (char to number)
 # decoding characters (number to char)
 
+class ConvertingArrays(object):
+    """dynamically set up a method to call conversions for arrays"""
+
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def array_conversion(dataarray, conversion):
+        """convert a whole array"""
+
+        i_new = "not set"
+        dataarray_new = []
+        for i in dataarray:
+            if conversion == "int_to_bit": i_new = ConvertingNumbers.int_to_bit(i) 
+            if conversion == "int_to_oct": i_new = ConvertingNumbers.int_to_oct(i)
+            if conversion == "int_to_hex": i_new = ConvertingNumbers.int_to_hex(i)
+            
+            if conversion == "bit_to_int": i_new = ConvertingNumbers.bit_to_int(i) 
+            if conversion == "bit_to_oct": i_new = ConvertingNumbers.bit_to_oct(i) 
+            if conversion == "bit_to_hex": i_new = ConvertingNumbers.bit_to_hex(i) 
+
+            if conversion == "hex_to_bit": i_new = ConvertingNumbers.hex_to_bit(i) 
+            if conversion == "hex_to_int": i_new = ConvertingNumbers.hex_to_int(i) 
+            if conversion == "hex_to_oct": i_new = ConvertingNumbers.hex_to_oct(i) 
+            dataarray_new += [i_new]
+
+        return dataarray_new
+
 class ConvertingNumbers(object):
     """
     integers are the normally known digits with 10 numbers (0-9), also known as numbers with base 10. 

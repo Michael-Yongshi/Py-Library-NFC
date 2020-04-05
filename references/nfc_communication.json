@@ -1,0 +1,78 @@
+{
+    "ATR (Anwser To Reset)": {},
+    "Mifare Ultralight": {
+        "Identify": {
+            "APDU_int": [
+                255,
+                202,
+                0,
+                0,
+                0
+            ],
+            "APDU_hex": [
+                "0XFF",
+                "0XCA",
+                "0X00",
+                "0X00",
+                "0X00"
+            ],
+            "Response": {}
+        },
+        "Read": {
+            "APDU_int": [
+                255,
+                176,
+                0,
+                "block",
+                4
+            ],
+            "APDU_hex": [
+                "0XFF",
+                "0XB0",
+                "0X00",
+                "block",
+                "0X04"
+            ],
+            "Response": {
+                "text": {
+                    "start": {
+                        "block": 6,
+                        "byte": 3
+                    },
+                    "end": {
+                        "type": "encounter",
+                        "at": 254
+                    }
+                }
+            }
+        },
+        "Write": {
+            "APDU_int": [
+                255,
+                214,
+                0,
+                "block",
+                4
+            ],
+            "APDU_hex": [
+                "0XFF",
+                "0XD6",
+                "0X00",
+                "block",
+                "0X04"
+            ],
+            "Response": {
+                "text": {
+                    "start": {
+                        "block": 6,
+                        "byte": 3
+                    },
+                    "end": {
+                        "type": "encounter",
+                        "at": 254
+                    }
+                }
+            }
+        }
+    }
+}
