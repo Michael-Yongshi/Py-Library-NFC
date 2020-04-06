@@ -23,8 +23,8 @@ class NFCreference(object):
         super().__init__()
 
     @staticmethod
-    def get_apdu_command(function):
-    
+    def get_reference_material():
+
         # set the paths to the apdu reference file
         path = os.path.join(os.path.dirname(__file__), "references") # the same folder as caller
         filename = "nfc_communication"
@@ -33,128 +33,9 @@ class NFCreference(object):
         # open file and return the dictionary
         with open(complete_path, 'r') as infile:
             datadict = json.load(infile)
-
-        for key in datadict:
-            if key == "Mifare Ultralight":
-                for key2 in datadict[key]:
-                    if key2 == function:
-                        apdu_command = datadict[key][key2]["APDU_int"]
-                
-        return apdu_command
-
-    @staticmethod
-    def get_card_block_length(atr):
-        # the block length
-        length = "Unknown"
- 
-        length_value = atr[6]
-        # "OC" apparantly means 12 bytes of config data as C is the 12th letter in the hexadecimal numbering
-        # print(f"length_string: {length_string}")
-     
-        length = f" - length code: {length_value}"
-
-        return length
-
-    @staticmethod
-    def get_card_rid(atr):
-        # also known as RID or Registered App Provider Identifier
-        rid = "Unknown"
-
-        rids = {
-            "0XA0 0X0 0X0 0X3 0X6": "PC/SC Workgroup",
-        }
-
-        # 9th position, pythons first position is 0, so 9-1=8
-        atrsplit = atr[7:12]
-        rid_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
-
-        # print(f"rid_string: {rid_string}")
-
-        for key in rids:
-            if key == rid_string:
-                rid = f"{rids[key]} (code: {key})"
-                break
-    
-        if rid == "Unknown":
-            rid += f" - RID code: -{rid_string}-"
-
-        return rid
-
-    @staticmethod
-    def get_card_standard(atr):
-        # the iso standard that is followed
-        standard = "Unknown"
-
-        standards = {
-            "0X3": "ISO14443A, Part3", # standard format
-        }
-
-        # 
-        # 9th position, pythons first position is 0, so 9-1=8
-        atrsplit = atr[12:13]
-        standard_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
-
-        # print(f"standard_string: {standard_string}")
-
-        for key in standards:
-            if key == standard_string:
-                standard = f"{standards[key]} (code: {key})"
-                break
         
-        if standard == "Unknown":
-            standard += f" - standard code: -{standard_string}-"
+        return datadict
 
-        return standard
-
-    @staticmethod
-    def get_card_type(atr):
-
-        card_type = "Unknown"
-
-        card_types = {
-            "0X0 0X1": "Mifare 1K",
-            "0X0 0X2": "Mifare 4k",
-            "0X0 0X3": "Mifare Ultralight",
-            "0X0 0X26": "Mifare Mini",
-            "0XF0 0X4": "Topaz and Jewel",
-            "0XF0 0X11": "Felica 212k",
-            "0XF0 0X12": "Felica 424k",
-        }
-
-        atrsplit = atr[13:15]
-        card_type_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
-
-        for key in card_types:
-            if key == card_type_string:
-                card_type = f"{card_types[key]} (code: {key})"
-                break
-        
-        if card_type == "Unknown":
-            card_type += f" - card name code: -{card_type_string}-"
-
-        return card_type
-
-    @staticmethod
-    def get_card_rfu(atr):
-        # something to do with clock frequencies, are often left at 0 to set default setting.
-        rfu = "Unknown"
-
-        rfus = {
-            "0X0 0X0 0X0 0X0": "Default setting",
-        }
-
-        atrsplit = atr[15:19]
-        rfu_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
-
-        for key in rfus:
-            if key == rfu_string:
-                rfu = f"{rfus[key]} (code: {key})"
-                break
-        
-        if rfu == "Unknown":
-            rfu += f" - card name code: -{rfu_string}-"
-
-        return rfu
 
 class NDEFinterpreter(object):
     def __init__(self):
@@ -209,18 +90,6 @@ class NFCconnection(object):
         print(f"connected to card (in hex): {str(atrhex)}")
         print("")
 
-        # get some info out of ATR:
-        length = NFCreference.get_card_block_length(atr)
-        print(f"byte 7 // config data length: {length}")
-        rid = NFCreference.get_card_rid(atr)
-        print(f"bytes 8 - 12 // rid: {rid}")
-        standard = NFCreference.get_card_standard(atr)
-        print(f"byte 13 // standard: {standard}")
-        card_type = NFCreference.get_card_type(atr)
-        print(f"bytes 14 - 15 // cardtype: {card_type}")
-        rfu = NFCreference.get_card_rfu(atr)
-        print(f"bytes 16 - 19 // rfu: {rfu}")
-
         return NFCconnection(
             cardservice = cardservice,
         )
@@ -246,13 +115,110 @@ class NFCconnection(object):
             cardservice = cardservice,
         )
 
+    def get_atr_info(self):
+
+        atr = self.cardservice.connection.getATR()
+        
+        datadict = NFCreference.get_reference_material()
+        atrdict = datadict["ATR (Anwser To Reset)"]
+
+        # the block length
+        length = 0
+        info = "length"
+        length_value = atr[atrdict[info]["start"]:atrdict[info]["end"]]
+        # "OC" apparantly means 12 bytes of config data as C is the 12th letter in the hexadecimal numbering
+        # print(f"length_string: {length_string}")
+        length = f"{length_value}"
+
+
+        # RID or Registered App Provider Identifier
+        rid = "Unknown"
+        info = "Registered App Provider Identifiers (RIDs)"
+        atrsplit = atr[atrdict[info]["start"]:atrdict[info]["end"]]
+        rid_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
+
+        known_values = atrdict[info]["Known values"]
+        for key in known_values:
+            if known_values[key] == rid_string:
+                rid = f"{key}"
+                break
+
+        if rid == "Unknown":
+            rid += f" - RID code: -{rid_string}-"
+
+
+        # Standard
+        standard = "Unknown"
+        info = "Standards"
+        atrsplit = atr[atrdict[info]["start"]:atrdict[info]["end"]]
+        standard_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
+
+        known_values = atrdict[info]["Known values"]
+        for key in known_values:
+            if known_values[key] == standard_string:
+                standard = f"{key}"
+                break
+        
+        if standard == "Unknown":
+            standard += f" - standard code: -{standard_string}-"
+
+
+        # card ty0pes
+        card_type = "Unknown"
+        info = "Card Types"
+        atrsplit = atr[atrdict[info]["start"]:atrdict[info]["end"]]
+        card_type_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
+
+        known_values = atrdict[info]["Known values"]
+        for key in known_values:
+            if known_values[key] == card_type_string:
+                card_type = f"{key}"
+                break
+        
+        if card_type == "Unknown":
+            card_type += f" - card name code: -{card_type_string}-"
+
+
+
+        # something to do with clock frequencies, are often left at 0 to set default setting.
+        rfu = "Unknown"
+        info = "Radio Frequency Units (RFUs)"
+        atrsplit = atr[atrdict[info]["start"]:atrdict[info]["end"]]
+        rfu_string = ConvertingArrays.array_conversion(atrsplit, "int_to_hex")
+
+        known_values = atrdict[info]["Known values"]
+        for key in known_values:
+            if known_values[key] == rfu_string:
+                rfu = f"{key}"
+                break
+        
+        if rfu == "Unknown":
+            rfu += f" - card name code: -{rfu_string}-"
+
+        return {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
+
+    def get_apdu_command(self, function):
+    
+        datadict = NFCreference.get_reference_material()
+
+        atr_info = self.get_atr_info()
+        card_type = atr_info["card_type"]
+
+        apdu_command = "Card not recognized!"
+        for key in datadict:
+            if key == card_type:
+                for key2 in datadict[key]:
+                    if key2 == function:
+                        apdu_command = datadict[key][key2]["APDU_int"]
+                
+        return apdu_command
+
     def get_card_uid(self):
         #ACS ACR122U NFC Reader
         #This command below is based on the "API Driver Manual of ACR122U NFC Contactless Smart Card Reader"
         
-        # it basically returns the UID of the card
-        # apdu_command = [0xFF, 0xCA, 0x00, 0x00, 0x00]
-        apdu_command = NFCreference.get_apdu_command("Identify")
+        # it basically returns the UID of the card, for some cards this is necassary to open for communication (aka handshake)
+        apdu_command = self.get_apdu_command("Identify")
 
         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
         if sw1 == 144 and sw2 == 0:
@@ -283,7 +249,7 @@ class NFCconnection(object):
 
     def get_card_page(self, page):
 
-        apdu_command = NFCreference.get_apdu_command("Read")
+        apdu_command = self.get_apdu_command("Read")
         apdu_command[3] = page
 
         print(f"sending read command: {apdu_command}")
@@ -303,7 +269,7 @@ class NFCconnection(object):
         
     def set_card_page(self, page):
 
-        apdu_command = NFCreference.get_apdu_command("set_card_page")
+        apdu_command = self.get_apdu_command("Write")
         apdu_command.append(page)
         apdu_command.append(0x04)
         apdu_command_static = [0xFF, 0xD6, 0x00, int(page), 0x04]
