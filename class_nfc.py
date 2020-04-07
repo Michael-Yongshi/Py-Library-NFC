@@ -69,14 +69,19 @@ class NFCconnection(object):
         self.cardservice = cardservice
 
     @staticmethod
-    def initialize_any():
+    def initialize(card_type = ""):
 
-        cardtype = AnyCardType() # for accepting any type of card
+        if card_type == "":
+            cardtype = AnyCardType() # for accepting any type of card
+        else:
+            cardtype = ATRCardType(card_type)
+        
         cardrequest = CardRequest( timeout=1, cardType=cardtype )
 
         print("Waiting for card")
         cardservice = cardrequest.waitforcard()
         print("Card found")
+
         # connecting to card
         cardservice.connection.connect()
         print("Connection established")
@@ -90,30 +95,23 @@ class NFCconnection(object):
         print(f"connected to card (in hex): {str(atrhex)}")
         print("")
 
-        return NFCconnection(
-            cardservice = cardservice,
-        )
+        nfc_connection = NFCconnection(cardservice = cardservice)
+
+        return nfc_connection
 
     @staticmethod
-    def initialize_specific(atr, atrhex):
+    def initialize_any():
 
-        # Sample script for the smartcard.ATR utility class.
-        mycardbytes = NFCmethods.hexstring_to_bytes(atr)
-        cardtype = ATRCardType(mycardbytes) # for accepting a specific type of card
-        cardrequest = CardRequest( timeout=1, cardType=cardtype )
+        nfc_connection = NFCconnection.initialize()
 
-        print("Waiting for card")
-        cardservice = cardrequest.waitforcard()
-        print("Card connected")
+        return nfc_connection
 
-        # connecting to card
-        cardservice.connection.connect()
+    @staticmethod
+    def initialize_specific(exp_atr):
 
-        print("this is my card") if cardservice.connection.getATR() == mycardbytes else print("this is not my card")
+        nfc_connection = NFCconnection.initialize(exp_atr)
 
-        return NFCconnection(
-            cardservice = cardservice,
-        )
+        return nfc_connection
 
     def get_atr_info(self):
 
@@ -213,7 +211,7 @@ class NFCconnection(object):
                 
         return apdu_command
 
-    def get_card_uid(self):
+    def identify_card(self):
         #ACS ACR122U NFC Reader
         #This command below is based on the "API Driver Manual of ACR122U NFC Contactless Smart Card Reader"
         
@@ -232,52 +230,40 @@ class NFCconnection(object):
 
         return response, responsehex
 
-    def get_card_data(self):
+    def read_card(self):
         
         data = []
         page = 1
         while page > 0 and page < 45:
-            try:
-                readdata = self.get_card_page(page)
-                data += [readdata]
-                page += 1
-            except:
-                page = 0
+
+            apdu_command = self.get_apdu_command("Read")
+            apdu_command[3] = page
+
+            # print(f"sending read command: {apdu_command}")
+            # print(f"trying to retrieve page {page}")
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
+            # print(f"response: {response} status words: {sw1} {sw2}")
+            data += [response]
+            page += 1
+
 
         print(f"data of whole card is: {data}")
         return data
 
-    def get_card_page(self, page):
-
-        apdu_command = self.get_apdu_command("Read")
-        apdu_command[3] = page
-
-        print(f"sending read command: {apdu_command}")
-        # apdu_command = [0xFF, 0xB0, 0x00, int(page), 0x04]
-
-        # print(f"trying to retrieve page {page}")
-        response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-        # print(f"response: {response} status words: {sw1} {sw2}")
-
-        return response
-
-    def set_card_data(self):
+    def write_card(self):
         
         page = 1
         while page > 0 and page < 2:
-            self.set_card_page(page)
+            apdu_command = self.get_apdu_command("Write")
+            apdu_command.append(page)
+            apdu_command.append(0x04)
+            apdu_command_static = [0xFF, 0xD6, 0x00, int(page), 0x04]
+            print(f"apdu dynamic = {apdu_command}, while apdu static = {apdu_command_static}")
+
+            # WRITE_COMMAND = [apdu_command, int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16), int(value[6:8], 16)]
+            # # Let's write a page Page 9 is usually 00000000
+            # response, sw1, sw2 = connection.transmit(WRITE_COMMAND)
         
-    def set_card_page(self, page):
-
-        apdu_command = self.get_apdu_command("Write")
-        apdu_command.append(page)
-        apdu_command.append(0x04)
-        apdu_command_static = [0xFF, 0xD6, 0x00, int(page), 0x04]
-        print(f"apdu dynamic = {apdu_command}, while apdu static = {apdu_command_static}")
-
-        # WRITE_COMMAND = [apdu_command, int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16), int(value[6:8], 16)]
-        # # Let's write a page Page 9 is usually 00000000
-        # response, sw1, sw2 = connection.transmit(WRITE_COMMAND)
 
     # def read_card_depreciated(self, op_type):
     # 
