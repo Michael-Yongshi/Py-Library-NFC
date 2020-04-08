@@ -250,20 +250,20 @@ class NFCconnection(object):
         print(f"data of whole card is: {data}")
         return data
 
-    def write_card(self):
-        
-        page = 1
-        while page > 0 and page < 2:
-            apdu_command = self.get_apdu_command("Write")
-            apdu_command.append(page)
-            apdu_command.append(0x04)
-            apdu_command_static = [0xFF, 0xD6, 0x00, int(page), 0x04]
-            print(f"apdu dynamic = {apdu_command}, while apdu static = {apdu_command_static}")
+    def write_card(self, datatype, data):
 
-            # WRITE_COMMAND = [apdu_command, int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16), int(value[6:8], 16)]
-            # # Let's write a page Page 9 is usually 00000000
-            # response, sw1, sw2 = connection.transmit(WRITE_COMMAND)
-        
+        # prepare data
+        datatype = "text"
+        dataintlist = ""
+
+        # prepare data command
+        apdu_command = self.get_apdu_command("Write")
+
+
+        WRITE_COMMAND = [apdu_command, int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16), int(value[6:8], 16)]
+        # # Let's write a page Page 9 is usually 00000000
+        # response, sw1, sw2 = connection.transmit(WRITE_COMMAND)
+    
 
     # def read_card_depreciated(self, op_type):
     # 
