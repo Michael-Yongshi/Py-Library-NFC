@@ -1,4 +1,4 @@
-# Python_NFC_Lib
+# WAM_Lib_NFC
 a library to interact with nfc cards and readers from python using pyscard
 
 ## Roadmap
