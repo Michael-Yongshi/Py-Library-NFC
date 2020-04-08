@@ -26,7 +26,7 @@ class NFCreference(object):
     def get_reference_material():
 
         # set the paths to the apdu reference file
-        path = os.path.join(os.path.dirname(__file__), "references") # the same folder as caller
+        path = os.path.join(os.path.dirname(__file__), "..", "references") # the same folder as caller
         filename = "nfc_communication"
         complete_path = os.path.join(path, filename + ".json")
 
