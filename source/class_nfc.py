@@ -11,12 +11,34 @@ from smartcard.CardRequest import CardRequest
 from smartcard.CardConnection import CardConnection
 from smartcard.System import readers
 
+import ndef
+# from ndef.message import message_decoder, message_encoder
+# from ndef.record import Record
+
 from .class_conversions import (
     ConvertingArrays,
     ConvertingNumbers,
     EncodingCharacter,
     DecodingCharacter,
 )
+
+class NDEFcoding(object):
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def decode_message(response):
+        """creates a list of records that is found on the card, expects a response in the form of a byte array that can be interpreted as ndef format"""
+
+        octets = response
+        decoder = ndef.message_decoder(octets)
+        next(decoder)
+        print(decoder)
+        message = list(decoder)
+
+    @staticmethod
+    def encode_message(payload, type):
+        """creates an ndef encoding to write to the card, needs a payload of a certain type to encode it to ndef format"""
 
 class NFCreference(object):
     def __init__(self):
@@ -36,8 +58,7 @@ class NFCreference(object):
         
         return datadict
 
-
-class NDEFinterpreter(object):
+class NFCdecoder(object):
     def __init__(self):
         super().__init__()
 
@@ -229,6 +250,42 @@ class NFCconnection(object):
         print(f"UID of card is: {response} with hex: {responsehex}")
 
         return response, responsehex
+
+    def read_card_ndeflib(self):
+        
+        data = []
+        page = 1
+        while page > 0 and page < 45:
+
+            apdu_command = self.get_apdu_command("Read")
+            apdu_command[3] = page
+
+            # print(f"sending read command: {apdu_command}")
+            # print(f"trying to retrieve page {page}")
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
+            # print(f"response: {response} status words: {sw1} {sw2}")
+            data += response
+            page += 1
+
+        print(f"data of whole card is: {data}")
+        hexstring = '9101085402646e48656c6c6f5101085402656e576f726c64'
+        print(f"test hexstring is: {hexstring}")
+        octets = bytearray.fromhex(hexstring)
+        print(f"test octets are: {octets}")
+        decoder = ndef.message_decoder(octets)
+        print(f"test decoder is: {decoder}")
+        message = list(decoder)
+        print(f"test message is: {message}")
+
+        datahex = ConvertingArrays.array_conversion(data, "int_to_hex")
+        datandef = ""
+        for i in datahex:
+            datandef += ConvertingNumbers.hex_to_hexstr(i)
+
+        # datandef = bytes(data)  too many octets...
+        print(f"ndef format is: {datandef}")
+
+        return datandef
 
     def read_card(self):
         
