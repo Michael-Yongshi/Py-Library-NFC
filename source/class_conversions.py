@@ -27,6 +27,7 @@ class ConvertingArrays(object):
             if conversion == "hex_to_bit": i_new = ConvertingNumbers.hex_to_bit(i) 
             if conversion == "hex_to_int": i_new = ConvertingNumbers.hex_to_int(i) 
             if conversion == "hex_to_oct": i_new = ConvertingNumbers.hex_to_oct(i) 
+            if conversion == "hex_to_hexstr": i_new = ConvertingNumbers.hex_to_hexstr(i)
             dataarray_new += [i_new]
 
         return dataarray_new
@@ -56,6 +57,7 @@ class ConvertingNumbers(object):
     - hex_to_bit       (0x)41(h)       ->      (0b)1000001
     - hex_to_int       (0x)41(h)       ->      65
     - hex_to_oct       (0x)41(h)       ->      (0o)81
+    - hex_to_hexstr    (0x)41(h)       ->      "41"
     """
 
     def __init__(self):
@@ -152,6 +154,13 @@ class ConvertingNumbers(object):
         hex_to_int = ConvertingNumbers.hex_to_int(hexadecimal)
         int_to_oct = ConvertingNumbers.int_to_oct(hex_to_int) 
         return int_to_oct
+    
+    @staticmethod
+    def hex_to_hexstr(hexadecimal):
+        """strip the hex values of their prefix"""
+        
+        hex_to_hexstr = hexadecimal[2:]
+        return hex_to_hexstr
 
 class EncodingCharacter(object):
     def __init__(self):
