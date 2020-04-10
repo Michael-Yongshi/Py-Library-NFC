@@ -243,11 +243,14 @@ class NFCconnection(object):
             # print(f"trying to retrieve page {page}")
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
             # print(f"response: {response} status words: {sw1} {sw2}")
-            data += [response]
+            data += response
             page += 1
 
-
         print(f"data of whole card is: {data}")
+
+        datahex = ConvertingArrays.array_conversion(data, "int_to_hex")
+        print(f"data in hex is: {datahex}")
+
         return data
 
     def write_card(self, datatype, data):
