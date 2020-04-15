@@ -159,7 +159,7 @@ class ConvertingNumbers(object):
     def hex_to_hexstr(hexadecimal):
         """strip the hex values of their prefix"""
         
-        hex_to_hexstr = hexadecimal[2:]
+        hex_to_hexstr = hexadecimal[2:] if len(hexadecimal) == 4 else f"0{hexadecimal[2:]}"
         return hex_to_hexstr
 
 class EncodingCharacter(object):

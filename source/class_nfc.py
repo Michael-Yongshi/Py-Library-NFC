@@ -68,32 +68,6 @@ class NFCreference(object):
         
         return datadict
 
-class NFCdecoder(object):
-    def __init__(self):
-        super().__init__()
-
-    @staticmethod
-    def decode_message(response):
-
-        print(f"trying to decode {response}")
-        response_hex = []
-        message = ""
-        for page in response:
-            pagehex = []
-            pagestring = ""
-            for i in page:
-                hexa = ConvertingNumbers.int_to_hex(i)
-                pagehex += [hexa]
-                character = DecodingCharacter.integer_to_character(i)
-                pagestring += character
-            # print(f"Page {page} decoded to {pagestring}")
-            response_hex += [pagehex]
-            message += pagestring
-        print(f"response in hex: {response_hex}")
-        print(f"Decoded message: {message}")
-
-        return response_hex, message
-
 class NFCconnection(object):
     def __init__(self, cardservice):
         super().__init__()
@@ -261,64 +235,74 @@ class NFCconnection(object):
 
         return response, responsehex
 
-    def read_card_ndeflib(self):
-        
-        data = []
-        page = 1
-        while page > 0 and page < 45:
-
-            apdu_command = self.get_apdu_command("Read")
-            apdu_command[3] = page
-
-            # print(f"sending read command: {apdu_command}")
-            # print(f"trying to retrieve page {page}")
-            response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-            # print(f"response: {response} status words: {sw1} {sw2}")
-            data += response
-            page += 1
-
-        print(f"data of whole card is: {data}")
-        hexstring = '9101085402646e48656c6c6f5101085402656e576f726c64'
-        print(f"test hexstring is: {hexstring}")
-        octets = bytearray.fromhex(hexstring)
-        print(f"test octets are: {octets}")
-        decoder = ndef.message_decoder(octets)
-        print(f"test decoder is: {decoder}")
-        message = list(decoder)
-        print(f"test message is: {message}")
-
-        datahex = ConvertingArrays.array_conversion(data, "int_to_hex")
-        datandef = ""
-        for i in datahex:
-            datandef += ConvertingNumbers.hex_to_hexstr(i)
-
-        # datandef = bytes(data)  too many octets...
-        print(f"ndef format is: {datandef}")
-
-        return datandef
-
     def read_card(self):
         
+        # retrieving raw data (integer array) from card
         data = []
         page = 1
         while page > 0 and page < 45:
-
             apdu_command = self.get_apdu_command("Read")
             apdu_command[3] = page
-
             # print(f"sending read command: {apdu_command}")
             # print(f"trying to retrieve page {page}")
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
             # print(f"response: {response} status words: {sw1} {sw2}")
             data += response
             page += 1
+        print(f"Raw data of card is: {data}")
 
-        print(f"data of whole card is: {data}")
+        # converting the raw data to hex string
+        datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
+        datahex = ""
+        for i in datahexarray:
+            datahex += ConvertingNumbers.hex_to_hexstr(i)
+        print(f"hex data is: {datahex}")
 
-        datahex = ConvertingArrays.array_conversion(data, "int_to_hex")
-        print(f"data in hex is: {datahex}")
+        # find payload part
+        index_start = datahex.find("5402656e") - 6
+        index_end = datahex.find("fe")
+        payload = datahex[index_start:index_end]
+        print(f"ndef data is: {payload}")
+        
+        # decode payload
+        databytearray = bytearray.fromhex(payload)
+        payloadobject = NDEFcoding.decode_message(databytearray)
+        print(f"returned payloadobject: {payloadobject}")
+        payload = {}
+        i = 0
+        for dataobject in payloadobject:
+            i += 1
+            if dataobject.type == "urn:nfc:wkt:T":
+                stripped = dataobject.data[3:]
+                decoded = stripped.decode('UTF-8')
+                payload.update({i: decoded})
+                print(payload)
+        print(f"payload with {i} records: {payload}")
 
-        return data
+        return payload
+
+    # def read_card(self):
+        
+    #     data = []
+    #     page = 1
+    #     while page > 0 and page < 45:
+
+    #         apdu_command = self.get_apdu_command("Read")
+    #         apdu_command[3] = page
+
+    #         # print(f"sending read command: {apdu_command}")
+    #         # print(f"trying to retrieve page {page}")
+    #         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
+    #         # print(f"response: {response} status words: {sw1} {sw2}")
+    #         data += response
+    #         page += 1
+
+    #     print(f"data of whole card is: {data}")
+
+    #     datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
+    #     print(f"data in hex is: {datahexarray}")
+
+    #     return data
 
     def write_card(self, datatype, data):
 
@@ -335,48 +319,30 @@ class NFCconnection(object):
         # response, sw1, sw2 = connection.transmit(WRITE_COMMAND)
     
 
-    # def read_card_depreciated(self, op_type):
-    # 
 
+# class NFCdecoder(object):
+#     """depreciated"""
+#     def __init__(self):
+#         super().__init__()
 
-    #     # in order to log the details of the op_type variable we translate the bytes to hex so they become human readable
-    #     op_typehex = []
-    #     for i in op_type:
-    #         hexstring = hex(i)
-    #         hexstring12 = hexstring[0] + hexstring[1]
-    #         if len(hexstring) == 3:
-    #             hexstring34 = hexstring[2].upper() + "0"
-    #         else:
-    #             hexstring34 = hexstring[2].upper() + hexstring[3].upper()
-    #         hexstring = hexstring12 + hexstring34
-    #         op_typehex += [hexstring]
+#     @staticmethod
+#     def decode_message(response):
 
-    #     print(f"op_type hex: {op_typehex}")
-    #     print(f"op_type: {op_type}")
+#         print(f"trying to decode {response}")
+#         response_hex = []
+#         message = ""
+#         for page in response:
+#             pagehex = []
+#             pagestring = ""
+#             for i in page:
+#                 hexa = ConvertingNumbers.int_to_hex(i)
+#                 pagehex += [hexa]
+#                 character = DecodingCharacter.integer_to_character(i)
+#                 pagestring += character
+#             # print(f"Page {page} decoded to {pagestring}")
+#             response_hex += [pagehex]
+#             message += pagestring
+#         print(f"response in hex: {response_hex}")
+#         print(f"Decoded message: {message}")
 
-    #     # use the following details (in tutorial DF_TELECOM)
-    #     # op_details = [0x05, 0x00, 0x00, 0x00, 0x00, 0x00]
-
-    #     # in order to log the details of the op_details variable we translate the bytes to hex so they become human readable
-    #     # op_detailshex = []
-    #     # for i in op_details:
-    #     #     hexstring = hex(i)
-    #     #     hexstring12 = hexstring[0] + hexstring[1]
-    #     #     if len(hexstring) == 3:
-    #     #         hexstring34 = hexstring[2].upper() + "0"
-    #     #     else:
-    #     #         hexstring34 = hexstring[2].upper() + hexstring[3].upper()
-    #     #     hexstring = hexstring12 + hexstring34
-    #     #     op_detailshex += [hexstring]
-
-    #     # print(f"op_details hex: {op_detailshex}")
-    #     # print(f"op_details: {op_details}")
-
-    #     apdu = op_type # + op_details
-    #     print(f"sending {NFCmethods.bytes_to_hex(apdu)}")
-
-    #     # response, sw1, sw2 = cardservice.connection.transmit( apdu, CardConnection.T1_protocol )
-    #     response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
-    #     print(f"response: {response} status words: {sw1} {sw2}")
-
-    #     return response
+#         return response_hex, message

@@ -1,0 +1,24 @@
+NDEFlib example breakdown
+
+91 (start payload)
+01 (start record)
+08 (length)
+54 (T: text indicator)
+02656e (\02en: denoting english characters)
+48656c6c6f (Hello)
+51 (Q: record splitter?)
+01 (start record)
+08 (length)
+54 (T: text indicator)
+02656e (\02en: denoting english characters)
+576f726c64 (World)
+
+so split text at start payload.
+91 and further give to decoder.
+
+
+e2a86481af480000e1103e000347d1
+0143 (start record of 43 bytes)
+5402656e
+36623635626564323465633438303464633435626536663136626438663239386635663932613066636464616438613135363566306663353364643732313837
+fe
