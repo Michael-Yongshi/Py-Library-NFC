@@ -47,8 +47,18 @@ class NDEFcoding(object):
         return message
 
     @staticmethod
-    def encode_message(payload, type):
-        """creates an ndef encoding to write to the card, needs a payload of a certain type to encode it to ndef format"""
+    def encode_message(data):
+        """creates an ndef encoding to write to the card, needs a data of a certain type to encode it to ndef format"""
+
+        # ndeflib example
+        print(data)
+        databin= data.encode('utf-8')
+        print(databin)
+        record = ndef.Record('urn:nfc:wkt:T', '1', databin)
+        payload = ndef.message_encoder(record)
+        print(f"encoded payload = {payload}")
+
+        return payload
 
 class NFCreference(object):
     def __init__(self):
@@ -291,34 +301,11 @@ class NFCconnection(object):
 
         return payload
 
-    # def read_card(self):
-        
-    #     data = []
-    #     page = 1
-    #     while page > 0 and page < 45:
-
-    #         apdu_command = self.get_apdu_command("Read")
-    #         apdu_command[3] = page
-
-    #         # print(f"sending read command: {apdu_command}")
-    #         # print(f"trying to retrieve page {page}")
-    #         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-    #         # print(f"response: {response} status words: {sw1} {sw2}")
-    #         data += response
-    #         page += 1
-
-    #     print(f"data of whole card is: {data}")
-
-    #     datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
-    #     print(f"data in hex is: {datahexarray}")
-
-    #     return data
-
-    def write_card(self, datatype, data):
+    def write_card(self, data):
 
         # prepare data
-        datatype = "text"
-        dataintlist = ""
+        NDEFcoding.encode_message(data)
+
 
         # prepare data command
         apdu_command = self.get_apdu_command("Write")
@@ -328,6 +315,7 @@ class NFCconnection(object):
         # # Let's write a page Page 9 is usually 00000000
         # response, sw1, sw2 = connection.transmit(WRITE_COMMAND)
     
+
 
 
 # class NFCdecoder(object):
