@@ -102,6 +102,15 @@ class NFCconnection(object):
 
         nfc_connection = NFCconnection(cardservice = cardservice)
 
+        # get some info out of ATR:
+        atr_info = nfc_connection.get_atr_info()
+        print(f"ATR information is: {atr_info}")
+        print("")
+
+        response, responsehex = nfc_connection.identify_card()
+        print(f"UID of card is: {response} with hex: {responsehex}")
+        print("")
+
         return nfc_connection
 
     @staticmethod
@@ -231,8 +240,6 @@ class NFCconnection(object):
 
         responsehex = ConvertingArrays.array_conversion(response, "int_to_hex")
 
-        print(f"UID of card is: {response} with hex: {responsehex}")
-
         return response, responsehex
 
     def read_card(self):
@@ -250,24 +257,27 @@ class NFCconnection(object):
             data += response
             page += 1
         print(f"Raw data of card is: {data}")
-
+        print("")
         # converting the raw data to hex string
         datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
         datahex = ""
         for i in datahexarray:
             datahex += ConvertingNumbers.hex_to_hexstr(i)
         print(f"hex data is: {datahex}")
+        print("")
 
         # find payload part
         index_start = datahex.find("5402656e") - 6
         index_end = datahex.find("fe")
         payload = datahex[index_start:index_end]
         print(f"ndef data is: {payload}")
+        print("")
         
         # decode payload
         databytearray = bytearray.fromhex(payload)
         payloadobject = NDEFcoding.decode_message(databytearray)
         print(f"returned payloadobject: {payloadobject}")
+        print("")
         payload = {}
         i = 0
         for dataobject in payloadobject:
@@ -276,8 +286,8 @@ class NFCconnection(object):
                 stripped = dataobject.data[3:]
                 decoded = stripped.decode('UTF-8')
                 payload.update({i: decoded})
-                print(payload)
         print(f"payload with {i} records: {payload}")
+        print("")
 
         return payload
 
