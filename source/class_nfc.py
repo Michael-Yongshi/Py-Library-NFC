@@ -30,11 +30,21 @@ class NDEFcoding(object):
     def decode_message(response):
         """creates a list of records that is found on the card, expects a response in the form of a byte array that can be interpreted as ndef format"""
 
+        print(f"input response = {response}")
+        
         octets = response
+        print(f"octets = {octets}")
+
         decoder = ndef.message_decoder(octets)
-        next(decoder)
-        print(decoder)
+        print(f"decoder = {decoder}")
+        
         message = list(decoder)
+        print(f"message = {message}")
+
+        for _ in decoder:
+            next(decoder)
+
+        return message
 
     @staticmethod
     def encode_message(payload, type):
