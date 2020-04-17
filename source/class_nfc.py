@@ -30,16 +30,16 @@ class NDEFcoding(object):
     def decode_message(response):
         """creates a list of records that is found on the card, expects a response in the form of a byte array that can be interpreted as ndef format"""
 
-        print(f"input response = {response}")
+        # print(f"input response = {response}")
         
         octets = response
-        print(f"octets = {octets}")
+        # print(f"octets = {octets}")
 
         decoder = ndef.message_decoder(octets)
-        print(f"decoder = {decoder}")
+        # print(f"decoder = {decoder}")
         
         message = list(decoder)
-        print(f"message = {message}")
+        # print(f"message = {message}")
 
         for _ in decoder:
             next(decoder)
@@ -266,28 +266,30 @@ class NFCconnection(object):
             # print(f"response: {response} status words: {sw1} {sw2}")
             data += response
             page += 1
-        print(f"Raw data of card is: {data}")
-        print("")
+        # print(f"Raw data of card is: {data}")
+        # print("")
+
         # converting the raw data to hex string
         datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
         datahex = ""
         for i in datahexarray:
             datahex += ConvertingNumbers.hex_to_hexstr(i)
-        print(f"hex data is: {datahex}")
-        print("")
+        # print(f"hex data is: {datahex}")
+        # print("")
 
         # find payload part
         index_start = datahex.find("5402656e") - 6
         index_end = datahex.find("fe")
         payload = datahex[index_start:index_end]
-        print(f"ndef data is: {payload}")
-        print("")
+        # print(f"ndef data is: {payload}")
+        # print("")
         
         # decode payload
         databytearray = bytearray.fromhex(payload)
         payloadobject = NDEFcoding.decode_message(databytearray)
-        print(f"returned payloadobject: {payloadobject}")
-        print("")
+        # print(f"returned payloadobject: {payloadobject}")
+        # print("")
+
         payload = {}
         i = 0
         for dataobject in payloadobject:
