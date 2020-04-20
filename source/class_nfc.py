@@ -307,7 +307,7 @@ class NFCconnection(object):
         print(f"payload with {i} records: {payload}")
         print("")
 
-        return payload, index_start, index_end
+        return payload
 
     def write_card(self, data):
 
@@ -319,7 +319,7 @@ class NFCconnection(object):
         end = 254
         data_encoded = list(data.encode('utf-8'))
         payload = [3, recordlength, 209, 1, datalength, text, 2] + language + data_encoded + [end]
-        print(f"payload data = {payload}")
+        # print(f"payload data = {payload}")
 
         payloadlength = len(payload)
         page = 4
@@ -328,38 +328,13 @@ class NFCconnection(object):
             write_command = self.get_apdu_command("Write")
             write_command[3] = page
             apdu = write_command + payload[i:i+4]
-            print(f"apdu = {apdu}")
-            apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
-            print(f"apdu in hex = {apdu_hex}")
+            # print(f"apdu = {apdu}")
+            # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
+            # print(f"apdu in hex = {apdu_hex}")
 
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
-            print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+            # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
 
             page += 1
 
-# class NFCdecoder(object):
-#     """depreciated"""
-#     def __init__(self):
-#         super().__init__()
-
-#     @staticmethod
-#     def decode_message(response):
-
-#         print(f"trying to decode {response}")
-#         response_hex = []
-#         message = ""
-#         for page in response:
-#             pagehex = []
-#             pagestring = ""
-#             for i in page:
-#                 hexa = ConvertingNumbers.int_to_hex(i)
-#                 pagehex += [hexa]
-#                 character = DecodingCharacter.integer_to_character(i)
-#                 pagestring += character
-#             # print(f"Page {page} decoded to {pagestring}")
-#             response_hex += [pagehex]
-#             message += pagestring
-#         print(f"response in hex: {response_hex}")
-#         print(f"Decoded message: {message}")
-
-#         return response_hex, message
+        print(f"Written to card: {data} as {response}")
