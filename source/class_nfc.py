@@ -50,12 +50,18 @@ class NDEFcoding(object):
     def encode_message(data):
         """creates an ndef encoding to write to the card, needs a data of a certain type to encode it to ndef format"""
 
-        # ndeflib example
-        print(data)
+        print(f"trying to encode {data}")
+        # encode characters to bytes
         databin= data.encode('utf-8')
         print(databin)
+        # ndeflib example
         record = ndef.Record('urn:nfc:wkt:T', '1', databin)
-        payload = ndef.message_encoder(record)
+        # no clue yet why below works as it does. the last line actually returns / yields the record from the previous line
+        encoder = ndef.message_encoder()
+        encoder.send(None)
+        encoder.send(record)
+        payload = encoder.send(None)
+        # payload = ndef.message_encoder(record)
         print(f"encoded payload = {payload}")
 
         return payload
@@ -301,24 +307,35 @@ class NFCconnection(object):
         print(f"payload with {i} records: {payload}")
         print("")
 
-        return payload
+        return payload, index_start, index_end
 
     def write_card(self, data):
 
         # prepare data
-        NDEFcoding.encode_message(data)
+        recordlength = len(data) + 7
+        datalength = len(data) + 3
+        text = 84
+        language = [101, 110]
+        end = 254
+        data_encoded = list(data.encode('utf-8'))
+        payload = [3, recordlength, 209, 1, datalength, text, 2] + language + data_encoded + [end]
+        print(f"payload data = {payload}")
 
+        payloadlength = len(payload)
+        page = 4
+        for i in range(0, payloadlength - 1, 4):
+            # prepare data command
+            write_command = self.get_apdu_command("Write")
+            write_command[3] = page
+            apdu = write_command + payload[i:i+4]
+            print(f"apdu = {apdu}")
+            apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
+            print(f"apdu in hex = {apdu_hex}")
 
-        # prepare data command
-        apdu_command = self.get_apdu_command("Write")
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
+            print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
 
-
-        WRITE_COMMAND = [apdu_command, int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16), int(value[6:8], 16)]
-        # # Let's write a page Page 9 is usually 00000000
-        # response, sw1, sw2 = connection.transmit(WRITE_COMMAND)
-    
-
-
+            page += 1
 
 # class NFCdecoder(object):
 #     """depreciated"""

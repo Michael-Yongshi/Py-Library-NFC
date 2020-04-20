@@ -17,6 +17,9 @@ https://stackoverflow.com/questions/56423316/i-can-not-understand-my-symptoms-py
 https://github.com/GPII/linux-rfid-user-listener/blob/master/scriptor.1p
 https://khanhicetea.com/post/reading-nfc-card-id-on-ubuntu/#Source-code
 
+#### tutorial exploring apdu commands
+http://tech.springcard.com/2014/reading-and-writing-data-in-a-mifare-ultralight-card-with-a-proxnroll/
+
 #### Using ARC connect library on top of pyscard
 https://github.com/StevenTso/ACS-ACR122U-NFC-Reader
 
