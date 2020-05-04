@@ -248,10 +248,6 @@ class NFCconnection(object):
         apdu_command = self.get_apdu_command("Identify")
 
         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-        if sw1 == 144 and sw2 == 0:
-            # print(f"Handshake with card succesfull!")
-        else:
-            # print(f"Handshake failed!")
 
         responsehex = ConvertingArrays.array_conversion(response, "int_to_hex")
 
