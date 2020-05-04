@@ -105,7 +105,7 @@ class NFCconnection(object):
 
         # connecting to card
         cardservice.connection.connect()
-        print("Connection established")
+        print("Success: NFC Connection established")
         # print("")
 
         reader = cardservice.connection.getReader()
@@ -299,7 +299,7 @@ class NFCconnection(object):
                 stripped = dataobject.data[3:]
                 decoded = stripped.decode('UTF-8')
                 payload.update({i: decoded})
-        # print(f"payload with {i} records: {payload}")
+        print(f"Success: NFC payload with {i} records: {payload}")
         # print("")
 
         return payload
@@ -332,4 +332,4 @@ class NFCconnection(object):
 
             page += 1
 
-        # print(f"Written to card: {data} as {response}")
+        print(f"Success: NFC written to card: {data} as {response}")
