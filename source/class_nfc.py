@@ -53,7 +53,7 @@ class NDEFcoding(object):
         print(f"trying to encode {data}")
         # encode characters to bytes
         databin= data.encode('utf-8')
-        print(databin)
+        # print(databin)
         # ndeflib example
         record = ndef.Record('urn:nfc:wkt:T', '1', databin)
         # no clue yet why below works as it does. the last line actually returns / yields the record from the previous line
@@ -62,7 +62,7 @@ class NDEFcoding(object):
         encoder.send(record)
         payload = encoder.send(None)
         # payload = ndef.message_encoder(record)
-        print(f"encoded payload = {payload}")
+        # print(f"encoded payload = {payload}")
 
         return payload
 
@@ -99,33 +99,32 @@ class NFCconnection(object):
         
         cardrequest = CardRequest( timeout=1, cardType=cardtype )
 
-        print("Waiting for card")
+        # print("Waiting for card")
         cardservice = cardrequest.waitforcard()
-        print("Card found")
+        # print("Card found")
 
         # connecting to card
         cardservice.connection.connect()
         print("Connection established")
-        print("")
+        # print("")
 
         reader = cardservice.connection.getReader()
-        print(f"connected to reader: {reader}")
+        # print(f"connected to reader: {reader}")
         atr = cardservice.connection.getATR()
-        print(f"connected to card (in bytes): {str(atr)}")
+        # print(f"connected to card (in bytes): {str(atr)}")
         atrhex = ConvertingArrays.array_conversion(atr, "int_to_hex")
-        print(f"connected to card (in hex): {str(atrhex)}")
-        print("")
+        # print(f"connected to card (in hex): {str(atrhex)}")
 
         nfc_connection = NFCconnection(cardservice = cardservice)
 
         # get some info out of ATR:
         atr_info = nfc_connection.get_atr_info()
-        print(f"ATR information is: {atr_info}")
-        print("")
+        # print(f"ATR information is: {atr_info}")
+        # print("")
 
         response, responsehex = nfc_connection.identify_card()
-        print(f"UID of card is: {response} with hex: {responsehex}")
-        print("")
+        # print(f"UID of card is: {response} with hex: {responsehex}")
+        # print("")
 
         return nfc_connection
 
@@ -250,9 +249,9 @@ class NFCconnection(object):
 
         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
         if sw1 == 144 and sw2 == 0:
-            print(f"Handshake with card succesfull!")
+            # print(f"Handshake with card succesfull!")
         else:
-            print(f"Handshake failed!")
+            # print(f"Handshake failed!")
 
         responsehex = ConvertingArrays.array_conversion(response, "int_to_hex")
 
@@ -304,8 +303,8 @@ class NFCconnection(object):
                 stripped = dataobject.data[3:]
                 decoded = stripped.decode('UTF-8')
                 payload.update({i: decoded})
-        print(f"payload with {i} records: {payload}")
-        print("")
+        # print(f"payload with {i} records: {payload}")
+        # print("")
 
         return payload
 
@@ -337,4 +336,4 @@ class NFCconnection(object):
 
             page += 1
 
-        print(f"Written to card: {data} as {response}")
+        # print(f"Written to card: {data} as {response}")
