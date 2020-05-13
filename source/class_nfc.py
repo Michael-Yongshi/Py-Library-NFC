@@ -106,7 +106,7 @@ class NFCconnection(object):
         # connecting to card
         cardservice.connection.connect()
         print("Success: NFC Connection established")
-        # print("")
+
 
         reader = cardservice.connection.getReader()
         # print(f"connected to reader: {reader}")
@@ -117,14 +117,14 @@ class NFCconnection(object):
 
         nfc_connection = NFCconnection(cardservice = cardservice)
 
-        # get some info out of ATR:
-        atr_info = nfc_connection.get_atr_info()
-        # print(f"ATR information is: {atr_info}")
-        # print("")
+        # set ATR information to variable:
+        nfc_connection.get_atr_info()
+        # print(f"ATR information is: {self.atr_info}")
+
 
         response, responsehex = nfc_connection.identify_card()
         # print(f"UID of card is: {response} with hex: {responsehex}")
-        # print("")
+
 
         return nfc_connection
 
@@ -222,14 +222,15 @@ class NFCconnection(object):
         if rfu == "Unknown":
             rfu += f" - card name code: -{rfu_string}-"
 
-        return {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
+        self.atr_info = {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
+
+        return self.atr_info
 
     def get_apdu_command(self, function):
     
         datadict = NFCreference.get_reference_material()
 
-        atr_info = self.get_atr_info()
-        card_type = atr_info["card_type"]
+        card_type = self.atr_info["card_type"]
 
         apdu_command = "Card not recognized!"
         for key in datadict:
@@ -268,7 +269,7 @@ class NFCconnection(object):
             data += response
             page += 1
         # print(f"Raw data of card is: {data}")
-        # print("")
+
 
         # converting the raw data to hex string
         datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
@@ -276,20 +277,20 @@ class NFCconnection(object):
         for i in datahexarray:
             datahex += ConvertingNumbers.hex_to_hexstr(i)
         # print(f"hex data is: {datahex}")
-        # print("")
+
 
         # find payload part
         index_start = datahex.find("5402656e") - 6
         index_end = datahex.find("fe")
         payload = datahex[index_start:index_end]
         # print(f"ndef data is: {payload}")
-        # print("")
+
         
         # decode payload
         databytearray = bytearray.fromhex(payload)
         payloadobject = NDEFcoding.decode_message(databytearray)
         # print(f"returned payloadobject: {payloadobject}")
-        # print("")
+
 
         payload = {}
         i = 0
@@ -300,7 +301,7 @@ class NFCconnection(object):
                 decoded = stripped.decode('UTF-8')
                 payload.update({i: decoded})
         print(f"Success: NFC payload with {i} records: {payload}")
-        # print("")
+
 
         return payload
 
