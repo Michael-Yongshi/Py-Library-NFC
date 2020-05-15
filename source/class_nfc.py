@@ -121,10 +121,8 @@ class NFCconnection(object):
         nfc_connection.get_atr_info()
         # print(f"ATR information is: {self.atr_info}")
 
-
         response, responsehex = nfc_connection.identify_card()
         # print(f"UID of card is: {response} with hex: {responsehex}")
-
 
         return nfc_connection
 
@@ -287,6 +285,7 @@ class NFCconnection(object):
 
         
         # decode payload
+        print(payload)
         databytearray = bytearray.fromhex(payload)
         payloadobject = NDEFcoding.decode_message(databytearray)
         # print(f"returned payloadobject: {payloadobject}")
@@ -305,7 +304,7 @@ class NFCconnection(object):
 
         return payload
 
-    def write_card(self, data):
+    def write_card(self, data, encode=True):
 
         # prepare data
         recordlength = len(data) + 7
@@ -313,24 +312,27 @@ class NFCconnection(object):
         text = 84
         language = [101, 110]
         end = 254
-        data_encoded = list(data.encode('utf-8'))
-        payload = [3, recordlength, 209, 1, datalength, text, 2] + language + data_encoded + [end]
-        # print(f"payload data = {payload}")
+
+        payload = [3, recordlength, 209, 1, datalength, text, 2] + language + list(data) + [end]
+        print(f"payload data = {payload}")
 
         payloadlength = len(payload)
         page = 4
+        # try:
         for i in range(0, payloadlength - 1, 4):
             # prepare data command
             write_command = self.get_apdu_command("Write")
             write_command[3] = page
             apdu = write_command + payload[i:i+4]
-            # print(f"apdu = {apdu}")
+            print(f"apdu = {apdu}")
             # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
             # print(f"apdu in hex = {apdu_hex}")
 
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
-            # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+            print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
 
             page += 1
 
-        print(f"Success: NFC written to card: {data} as {response}")
+            # print(f"Success: NFC written to card: {data} as {response}")
+        # except:
+        #     print(f"Failed: NFC is not written correctly")
