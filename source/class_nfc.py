@@ -268,71 +268,69 @@ class NFCconnection(object):
             page += 1
         # print(f"Raw data of card is: {data}")
 
-
         # converting the raw data to hex string
-        datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
-        datahex = ""
-        for i in datahexarray:
-            datahex += ConvertingNumbers.hex_to_hexstr(i)
+        # datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
+        # datahex = ""
+        # for i in datahexarray:
+        #     datahex += ConvertingNumbers.hex_to_hexstr(i)
         # print(f"hex data is: {datahex}")
 
-
         # find payload part
-        index_start = datahex.find("5402656e") - 6
-        index_end = datahex.find("fe")
-        payload = datahex[index_start:index_end]
-        # print(f"ndef data is: {payload}")
+        for idx, val in enumerate(data):
+            # print(idx, val)
+            if val == 254:
+                index_end = idx
+                # print(index_end)
+                break
+            elif idx > len(data) -4:
+                pass
+            elif [val, data[idx+1], data[idx+2], data[idx+3]] == [84, 2, 101, 110]:
+                index_start = idx+4
+                # print(index_start)
+            else:
+                pass
 
-        
+        payload = data[index_start:index_end]
+        # print(f"payload is: {payload}")
+
         # decode payload
-        print(payload)
-        databytearray = bytearray.fromhex(payload)
-        payloadobject = NDEFcoding.decode_message(databytearray)
-        # print(f"returned payloadobject: {payloadobject}")
+        encrypted_key = bytes(payload)
 
+        print(f"Success: NFC payload: {encrypted_key}")
 
-        payload = {}
-        i = 0
-        for dataobject in payloadobject:
-            i += 1
-            if dataobject.type == "urn:nfc:wkt:T":
-                stripped = dataobject.data[3:]
-                decoded = stripped.decode('UTF-8')
-                payload.update({i: decoded})
-        print(f"Success: NFC payload with {i} records: {payload}")
-
-
-        return payload
+        return encrypted_key
 
     def write_card(self, data, encode=True):
+
+        # print(f"data to be written = {data}")
 
         # prepare data
         recordlength = len(data) + 7
         datalength = len(data) + 3
-        text = 84
-        language = [101, 110]
-        end = 254
-
-        payload = [3, recordlength, 209, 1, datalength, text, 2] + language + list(data) + [end]
-        print(f"payload data = {payload}")
+        datalist = list(data)
+        # print(f"data in list form = {datalist}")
+        databytes = bytes(data)
+        # print(f"data in bytes form = {databytes}")
+        payload = [3, recordlength, 209, 1, datalength, 84, 2, 101, 110] + list(data) + [254]
+        # print(f"payload data = {payload}")
 
         payloadlength = len(payload)
         page = 4
-        # try:
-        for i in range(0, payloadlength - 1, 4):
-            # prepare data command
-            write_command = self.get_apdu_command("Write")
-            write_command[3] = page
-            apdu = write_command + payload[i:i+4]
-            print(f"apdu = {apdu}")
-            # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
-            # print(f"apdu in hex = {apdu_hex}")
+        try:
+            for i in range(0, payloadlength - 1, 4):
+                # prepare data command
+                write_command = self.get_apdu_command("Write")
+                write_command[3] = page
+                apdu = write_command + payload[i:i+4]
+                # print(f"apdu = {apdu}")
+                # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
+                # print(f"apdu in hex = {apdu_hex}")
 
-            response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
-            print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+                response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
+                # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
 
-            page += 1
+                page += 1
 
-            # print(f"Success: NFC written to card: {data} as {response}")
-        # except:
-        #     print(f"Failed: NFC is not written correctly")
+            print(f"Success: NFC written to card: {payload}")
+        except:
+            print(f"Failed: NFC is not written correctly")
