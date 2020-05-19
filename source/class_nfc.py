@@ -218,6 +218,11 @@ class NFCconnection(object):
         if rfu == "Unknown":
             rfu += f" - card name code: -{rfu_string}-"
 
+        # retrieve UID of card
+        apdu_command = self.get_apdu_command("Identify")
+        response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
+        responsehex = ConvertingArrays.array_conversion(response, "int_to_hex")
+
         # retrieving length of card
         page = 1
         sw1 = 144
@@ -228,8 +233,8 @@ class NFCconnection(object):
             page += 1
         size = [4, page - 5]
 
-        self.atr_info = {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu, "size": size}
-        print(self.atr_info)
+        self.atr_info = {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu, "UID": response, "UID-hex": responsehex, "size": size}
+        # print(self.atr_info)
 
         return self.atr_info
 
