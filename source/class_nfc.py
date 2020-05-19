@@ -111,9 +111,9 @@ class NFCconnection(object):
         reader = cardservice.connection.getReader()
         # print(f"connected to reader: {reader}")
         atr = cardservice.connection.getATR()
-        # print(f"connected to card (in bytes): {str(atr)}")
+        print(f"connected to card (in bytes): {str(atr)}")
         atrhex = ConvertingArrays.array_conversion(atr, "int_to_hex")
-        # print(f"connected to card (in hex): {str(atrhex)}")
+        print(f"connected to card (in hex): {str(atrhex)}")
 
         nfc_connection = NFCconnection(cardservice = cardservice)
 
@@ -203,8 +203,6 @@ class NFCconnection(object):
         if card_type == "Unknown":
             card_type += f" - card name code: -{card_type_string}-"
 
-
-
         # something to do with clock frequencies, are often left at 0 to set default setting.
         rfu = "Unknown"
         info = "Radio Frequency Units (RFUs)"
@@ -220,7 +218,18 @@ class NFCconnection(object):
         if rfu == "Unknown":
             rfu += f" - card name code: -{rfu_string}-"
 
-        self.atr_info = {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
+        # retrieving length of card
+        page = 1
+        sw1 = 144
+        while sw1 == 144:
+            apdu_command = self.get_apdu_command("Read")
+            apdu_command[3] = page
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
+            page += 1
+        size = [4, page - 5]
+
+        self.atr_info = {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu, "size": size}
+        print(self.atr_info)
 
         return self.atr_info
 
@@ -257,16 +266,16 @@ class NFCconnection(object):
         # retrieving raw data (integer array) from card
         data = []
         page = 1
-        while page > 0 and page < 45:
+        sw1 = 144
+        while sw1 == 144:
             apdu_command = self.get_apdu_command("Read")
             apdu_command[3] = page
             # print(f"sending read command: {apdu_command}")
             # print(f"trying to retrieve page {page}")
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-            # print(f"response: {response} status words: {sw1} {sw2}")
+            print(f"page: {page}, response: {response}, status words: {sw1} : {sw2}")
             data += response
             page += 1
-        # print(f"Raw data of card is: {data}")
 
         # converting the raw data to hex string
         # datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
@@ -294,11 +303,34 @@ class NFCconnection(object):
         # print(f"payload is: {payload}")
 
         # decode payload
-        encrypted_key = bytes(payload)
+        data = bytes(payload)
 
-        print(f"Success: NFC payload: {encrypted_key}")
+        print(f"Success: NFC payload: {data}")
 
-        return encrypted_key
+        return data
+
+    def wipe_card(self):
+
+        page = 4
+        sw1 = 144
+        while sw1 == 144: # 144 is success (99 in hex), 99 is fail (63 in hex: wrong values)
+            try:
+                # prepare data command
+                write_command = self.get_apdu_command("Write")
+                write_command[3] = page
+                apdu = write_command + [0, 0, 0, 0]
+                # print(f"apdu = {apdu}")
+                # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
+                # print(f"apdu in hex = {apdu_hex}")
+
+                response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
+                # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+
+                print(f"page {page} wiped, {response}, sw1 {sw1}, sw2 {sw2}")
+                page += 1
+
+            except:
+                print(f"last page {page} wipe failed, {response}, sw1 {sw1}, sw2 {sw2}")
 
     def write_card(self, data, encode=True):
 
