@@ -85,9 +85,10 @@ class NFCreference(object):
         return datadict
 
 class NFCconnection(object):
-    def __init__(self, cardservice):
+    def __init__(self, cardservice, metadata):
         super().__init__()
         self.cardservice = cardservice
+        self.metadata = metadata
 
     @staticmethod
     def initialize(card_type = ""):
@@ -105,47 +106,32 @@ class NFCconnection(object):
 
         # connecting to card
         cardservice.connection.connect()
-        print("Success: NFC Connection established")
-
-
         reader = cardservice.connection.getReader()
-        # print(f"connected to reader: {reader}")
-        atr = cardservice.connection.getATR()
-        print(f"connected to card (in bytes): {str(atr)}")
-        atrhex = ConvertingArrays.array_conversion(atr, "int_to_hex")
-        print(f"connected to card (in hex): {str(atrhex)}")
+        print(f"Success: NFC Connection established on reader {reader}")
 
-        nfc_connection = NFCconnection(cardservice = cardservice)
+        # set up object
+        nfc_connection = NFCconnection(
+            cardservice = cardservice,
+            metadata = {},
+        )
 
-        # set ATR information to variable:
-        nfc_connection.get_atr_info()
-        # print(f"ATR information is: {self.atr_info}")
-
-        response, responsehex = nfc_connection.identify_card()
-        # print(f"UID of card is: {response} with hex: {responsehex}")
-
-        return nfc_connection
-
-    @staticmethod
-    def initialize_any():
-
-        nfc_connection = NFCconnection.initialize()
-
-        return nfc_connection
-
-    @staticmethod
-    def initialize_specific(exp_atr):
-
-        nfc_connection = NFCconnection.initialize(exp_atr)
-
-        return nfc_connection
-
-    def get_atr_info(self):
-
-        atr = self.cardservice.connection.getATR()
+        # get metadata
+        nfc_connection.get_card_atr_info()
+        nfc_connection.get_card_uid()
+        nfc_connection.get_card_size()
         
+        uid = nfc_connection.metadata["UID"]
+        size = nfc_connection.metadata["Size"]
+        print(f"Success: NFC Connection identified as {uid} with size {size}")
+
+        return nfc_connection
+
+    def get_card_atr_info(self):
+
         datadict = NFCreference.get_reference_material()
         atrdict = datadict["ATR (Anwser To Reset)"]
+
+        atr = self.cardservice.connection.getATR()
 
         # the block length
         length = 0
@@ -218,10 +204,23 @@ class NFCconnection(object):
         if rfu == "Unknown":
             rfu += f" - card name code: -{rfu_string}-"
 
+        atr_info = {"ATRraw": atr, "length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
+        self.metadata = {"ATR": atr_info}
+
+    def get_card_uid(self):
+
+        #ACS ACR122U NFC Reader
+        #This command below is based on the "API Driver Manual of ACR122U NFC Contactless Smart Card Reader"
+        # it basically returns the UID of the card, for some cards this is necassary to open for communication (aka handshake)
+
         # retrieve UID of card
         apdu_command = self.get_apdu_command("Identify")
         response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
         responsehex = ConvertingArrays.array_conversion(response, "int_to_hex")
+        
+        self.metadata.update({"UID": response})
+
+    def get_card_size(self):
 
         # retrieving length of card
         page = 1
@@ -231,18 +230,15 @@ class NFCconnection(object):
             apdu_command[3] = page
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
             page += 1
-        size = [4, page - 5]
+        size = page - 7
 
-        self.atr_info = {"length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu, "UID": response, "UID-hex": responsehex, "size": size}
-        # print(self.atr_info)
-
-        return self.atr_info
+        self.metadata.update({"Size": size})
 
     def get_apdu_command(self, function):
     
         datadict = NFCreference.get_reference_material()
 
-        card_type = self.atr_info["card_type"]
+        card_type = self.metadata["ATR"]["card_type"]
 
         apdu_command = "Card not recognized!"
         for key in datadict:
@@ -253,43 +249,31 @@ class NFCconnection(object):
                 
         return apdu_command
 
-    def identify_card(self):
-        #ACS ACR122U NFC Reader
-        #This command below is based on the "API Driver Manual of ACR122U NFC Contactless Smart Card Reader"
-        
-        # it basically returns the UID of the card, for some cards this is necassary to open for communication (aka handshake)
-        apdu_command = self.get_apdu_command("Identify")
-
-        response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-
-        responsehex = ConvertingArrays.array_conversion(response, "int_to_hex")
-
-        return response, responsehex
-
     def read_card(self):
         
+        # get size of card
+        size = self.metadata["Size"]
+        # print(size)
+
+        # Handshake with card 
+        self.get_card_uid()
+
         # retrieving raw data (integer array) from card
         data = []
-        page = 1
-        sw1 = 144
-        while sw1 == 144:
+        page = 4
+        while page <= size: # read only the relative to the size of the card (leave the last 5 pages alone, they are not data fields, but are writable)
             apdu_command = self.get_apdu_command("Read")
             apdu_command[3] = page
             # print(f"sending read command: {apdu_command}")
             # print(f"trying to retrieve page {page}")
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
-            print(f"page: {page}, response: {response}, status words: {sw1} : {sw2}")
+            # print(f"page: {page}, response: {response}, status words: {sw1} : {sw2}")
             data += response
             page += 1
 
-        # converting the raw data to hex string
-        # datahexarray = ConvertingArrays.array_conversion(data, "int_to_hex")
-        # datahex = ""
-        # for i in datahexarray:
-        #     datahex += ConvertingNumbers.hex_to_hexstr(i)
-        # print(f"hex data is: {datahex}")
+        # print(f"{page - 1} pages read")
 
-        # find payload part
+        # if successfull find payload part
         for idx, val in enumerate(data):
             # print(idx, val)
             if val == 254:
@@ -310,64 +294,85 @@ class NFCconnection(object):
         # decode payload
         data = bytes(payload)
 
-        print(f"Success: NFC payload: {data}")
+        print(f"Success: NFC payload read from card: {data}")
 
         return data
 
     def wipe_card(self):
 
+        # get size of card
+        size = self.metadata["Size"]
+        # print(size)
+
+        # Handshake with card 
+        self.get_card_uid()
+
         page = 4
-        sw1 = 144
-        while sw1 == 144: # 144 is success (99 in hex), 99 is fail (63 in hex: wrong values)
-            try:
-                # prepare data command
-                write_command = self.get_apdu_command("Write")
-                write_command[3] = page
-                apdu = write_command + [0, 0, 0, 0]
-                # print(f"apdu = {apdu}")
-                # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
-                # print(f"apdu in hex = {apdu_hex}")
+        while page <= size: # wipe only the relative to the size of the card (leave the last 5 pages alone, they are not data fields, but are writable)
+            # prepare data command
+            write_command = self.get_apdu_command("Write")
+            write_command[3] = page
+            apdu = write_command + [0, 0, 0, 0]
+            # print(f"apdu = {apdu}")
+            # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
+            # print(f"apdu in hex = {apdu_hex}")
 
-                response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
-                # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
+            # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
 
-                print(f"page {page} wiped, {response}, sw1 {sw1}, sw2 {sw2}")
-                page += 1
+            if sw1 == 99:
+                print(f"Failed: NFC wipe at page {page} failed, response {response}, sw1 {sw1}, sw2 {sw2}")
+                return "Failed"
+            page += 1
 
-            except:
-                print(f"last page {page} wipe failed, {response}, sw1 {sw1}, sw2 {sw2}")
+        print(f"Success: NFC card is wiped")
+        return "Success"
 
-    def write_card(self, data, encode=True):
+    def write_card(self, data):
+
+        # get size of card
+        size = self.metadata["Size"]
+        # print(size)
+
+        # Handshake with card 
+        self.get_card_uid()
 
         # print(f"data to be written = {data}")
 
-        # prepare data
+        # metadata of payload
         recordlength = len(data) + 7
         datalength = len(data) + 3
-        datalist = list(data)
-        # print(f"data in list form = {datalist}")
+
+        if recordlength > size:
+            return "Failed: card size is too small for payload"
+
+        # convert data to bytes
         databytes = bytes(data)
         # print(f"data in bytes form = {databytes}")
+
+        # build payload
         payload = [3, recordlength, 209, 1, datalength, 84, 2, 101, 110] + list(data) + [254]
         # print(f"payload data = {payload}")
 
         payloadlength = len(payload)
         page = 4
-        try:
-            for i in range(0, payloadlength - 1, 4):
-                # prepare data command
-                write_command = self.get_apdu_command("Write")
-                write_command[3] = page
-                apdu = write_command + payload[i:i+4]
-                # print(f"apdu = {apdu}")
-                # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
-                # print(f"apdu in hex = {apdu_hex}")
+        for i in range(0, payloadlength - 1, 4):
+            # prepare data command
+            write_command = self.get_apdu_command("Write")
+            write_command[3] = page
+            payload_part = payload[i:i+4]
+            apdu = write_command + payload_part
+            # print(f"apdu = {apdu}")
+            # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
+            # print(f"apdu in hex = {apdu_hex}")
 
-                response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
-                # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
+            # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+            if sw1 == 99:
+                print(f"Failed: NFC write error sending {payload_part} at page {page}: response: {response} and status codes {sw1} and {sw2}")
+                return "Failed"
+            page += 1
 
-                page += 1
+        print(f"Success: NFC written to card: {payload}")
+        return "Success"
 
-            print(f"Success: NFC written to card: {payload}")
-        except:
-            print(f"Failed: NFC is not written correctly")
