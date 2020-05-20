@@ -294,7 +294,7 @@ class NFCconnection(object):
         # decode payload
         data = bytes(payload)
 
-        print(f"Success: NFC payload read from card: {data}")
+        print(f"Success: NFC payload read from card")
 
         return data
 
