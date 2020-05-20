@@ -268,10 +268,16 @@ class NFCconnection(object):
             # print(f"trying to retrieve page {page}")
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
             # print(f"page: {page}, response: {response}, status words: {sw1} : {sw2}")
+            if sw1 == 99:
+                print(f"Failed reading card at page {page}, response {response}, sw1 {sw1}, sw2 {sw2} with data until now {data}")
+                return
             data += response
             page += 1
 
         # print(f"{page - 1} pages read")
+
+        index_start = 0
+        index_end = len(data) - 1
 
         # if successfull find payload part
         for idx, val in enumerate(data):
@@ -287,7 +293,7 @@ class NFCconnection(object):
                 # print(index_start)
             else:
                 pass
-
+        
         payload = data[index_start:index_end]
         # print(f"payload is: {payload}")
 
