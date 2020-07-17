@@ -5,6 +5,18 @@ a library to interact with nfc cards and readers from python using pyscard
 
 ## Getting Started
 
+for windows:
+```
+pip install pyscard
+```
+
+for ubuntu:
+```
+sudo apt-get install swig
+sudo apt-get install -y python3-pyscard
+sudo apt-get install pcscd
+```
+
 ## Development
 
 ### NFC
