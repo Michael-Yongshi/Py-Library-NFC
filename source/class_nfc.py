@@ -11,10 +11,6 @@ from smartcard.CardRequest import CardRequest
 from smartcard.CardConnection import CardConnection
 from smartcard.System import readers
 
-# import ndef
-# from ndef.message import message_decoder, message_encoder
-# from ndef.record import Record
-
 from .class_conversions import (
     ConvertingArrays,
     ConvertingNumbers,
@@ -22,49 +18,49 @@ from .class_conversions import (
     DecodingCharacter,
 )
 
-class NDEFcoding(object):
-    def __init__(self):
-        super().__init__()
+# class NDEFcoding(object):
+#     def __init__(self):
+#         super().__init__()
 
-    @staticmethod
-    def decode_message(response):
-        """creates a list of records that is found on the card, expects a response in the form of a byte array that can be interpreted as ndef format"""
+#     @staticmethod
+#     def decode_message(response):
+#         """creates a list of records that is found on the card, expects a response in the form of a byte array that can be interpreted as ndef format"""
 
-        # print(f"input response = {response}")
+#         # print(f"input response = {response}")
         
-        octets = response
-        # print(f"octets = {octets}")
+#         octets = response
+#         # print(f"octets = {octets}")
 
-        decoder = ndef.message_decoder(octets)
-        # print(f"decoder = {decoder}")
+#         decoder = ndef.message_decoder(octets)
+#         # print(f"decoder = {decoder}")
         
-        message = list(decoder)
-        # print(f"message = {message}")
+#         message = list(decoder)
+#         # print(f"message = {message}")
 
-        for _ in decoder:
-            next(decoder)
+#         for _ in decoder:
+#             next(decoder)
 
-        return message
+#         return message
 
-    @staticmethod
-    def encode_message(data):
-        """creates an ndef encoding to write to the card, needs a data of a certain type to encode it to ndef format"""
+#     @staticmethod
+#     def encode_message(data):
+#         """creates an ndef encoding to write to the card, needs a data of a certain type to encode it to ndef format"""
 
-        print(f"trying to encode {data}")
-        # encode characters to bytes
-        databin= data.encode('utf-8')
-        # print(databin)
-        # ndeflib example
-        record = ndef.Record('urn:nfc:wkt:T', '1', databin)
-        # no clue yet why below works as it does. the last line actually returns / yields the record from the previous line
-        encoder = ndef.message_encoder()
-        encoder.send(None)
-        encoder.send(record)
-        payload = encoder.send(None)
-        # payload = ndef.message_encoder(record)
-        # print(f"encoded payload = {payload}")
+#         print(f"trying to encode {data}")
+#         # encode characters to bytes
+#         databin= data.encode('utf-8')
+#         # print(databin)
+#         # ndeflib example
+#         record = ndef.Record('urn:nfc:wkt:T', '1', databin)
+#         # no clue yet why below works as it does. the last line actually returns / yields the record from the previous line
+#         encoder = ndef.message_encoder()
+#         encoder.send(None)
+#         encoder.send(record)
+#         payload = encoder.send(None)
+#         # payload = ndef.message_encoder(record)
+#         # print(f"encoded payload = {payload}")
 
-        return payload
+#         return payload
 
 class NFCreference(object):
     def __init__(self):
@@ -133,6 +129,24 @@ class NFCconnection(object):
 
         atr = self.cardservice.connection.getATR()
 
+        # 1 point: Start byte
+        info = "start byte"
+        atr_split = atr[atrdict[info]["start"]:atrdict[info]["end"]]
+        atr_point = atr_split[0]
+
+        # 2 point: Historical byte count
+        #second character, first digit (in 8f, the f)
+        info = "historical byte count"
+        atr_split = atr[atrdict[info]["start"]:atrdict[info]["end"]]
+        atr_point = atr_split[0]
+        atr_point_hex = ConvertingNumbers.int_to_hex(atr_point)
+        hist_byte_count_hex = atr_point_hex[-1:]
+        hist_byte_count = ConvertingNumbers.hex_to_int(hist_byte_count_hex)
+
+        atr_point_bit = ConvertingNumbers.int_to_bit(atr_point)
+        print(atr_point_bit)
+
+        # 3 point: 
         # the block length
         length = 0
         info = "length"
@@ -204,7 +218,7 @@ class NFCconnection(object):
         if rfu == "Unknown":
             rfu += f" - card name code: -{rfu_string}-"
 
-        atr_info = {"ATRraw": atr, "length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
+        atr_info = {"ATRraw": atr, "hist byte count": hist_byte_count, "length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
         self.metadata = {"ATR": atr_info}
 
     def get_card_uid(self):
