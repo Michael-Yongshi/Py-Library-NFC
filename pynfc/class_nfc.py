@@ -2,7 +2,6 @@
 # Sample script for the card centric approach
 
 import os
-import json
 import codecs
 
 from smartcard.ATR import ATR
@@ -17,6 +16,8 @@ from .class_conversions import (
     EncodingCharacter,
     DecodingCharacter,
 )
+
+from .class_reference import NFCreference
 
 # class NDEFcoding(object):
 #     def __init__(self):
@@ -61,24 +62,6 @@ from .class_conversions import (
 #         # print(f"encoded payload = {payload}")
 
 #         return payload
-
-class NFCreference(object):
-    def __init__(self):
-        super().__init__()
-
-    @staticmethod
-    def get_reference_material():
-
-        # set the paths to the apdu reference file
-        path = os.path.join(os.path.dirname(__file__)) # the same folder as caller
-        filename = "nfc_communication"
-        complete_path = os.path.join(path, filename + ".json")
-
-        # open file and return the dictionary
-        with open(complete_path, 'r') as infile:
-            datadict = json.load(infile)
-        
-        return datadict
 
 class NFCconnection(object):
     def __init__(self, cardservice, metadata):
