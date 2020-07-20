@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="yongshi-pynfc",
-    version="0.1.1",
+    version="0.2.0",
     author="Michael-Yongshi",
     author_email="4registration@outlook.com",
     description="A nfc library for python",
