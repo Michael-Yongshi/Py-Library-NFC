@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="yongshi-pynfc",
-    version="0.3.2",
+    version="0.3.4",
     author="Michael-Yongshi",
     author_email="4registration@outlook.com",
     description="A nfc library for python",
@@ -15,10 +15,11 @@ setuptools.setup(
     url="https://github.com/Michael-Yongshi/Py-Library-NFC",
     packages=setuptools.find_packages(),
     data_files=[
-    (os.path.join('pynfc', 'references'), [
-        os.path.join('pynfc', 'references', 'nfc_communication.json'),
-        ])
-    ],
+        (os.path.join('pynfc'), [
+            os.path.join('pynfc', 'nfc_communication.json'),
+            ])
+        ],
+    include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
