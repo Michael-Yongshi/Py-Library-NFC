@@ -11,7 +11,7 @@ from smartcard.CardRequest import CardRequest
 from smartcard.CardConnection import CardConnection
 from smartcard.System import readers
 
-import ndef
+# import ndef
 # from ndef.message import message_decoder, message_encoder
 # from ndef.record import Record
 

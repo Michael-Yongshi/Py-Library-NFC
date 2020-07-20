@@ -5,6 +5,23 @@ a library to interact with nfc cards and readers from python using pyscard
 
 ## Getting Started
 
+for windows:
+```
+pip install pyscard
+```
+
+for ubuntu:
+```
+sudo apt install swig
+sudo apt install -y python3-pyscard
+sudo apt install pcscd # needed to scan for readers on ubuntu
+
+# if you get errors (ARC nfc reader has this with ubuntu)
+sudo vim /etc/modprobe.d/blacklist-libnfc.conf
+# Add this line: blacklist pn533_usb
+# Reboot
+```
+
 ## Development
 
 ### NFC
