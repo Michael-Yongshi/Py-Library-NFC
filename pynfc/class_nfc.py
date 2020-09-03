@@ -357,21 +357,25 @@ class NFCconnection(object):
         # Handshake with card 
         self.get_card_uid()
 
-        # print(f"data to be written = {data}")
+        # Convert to bytes if necessary
+        print(f"data to be written = {data}")
+        if isinstance(data, str):
+            databytes = bytes(data, 'utf-8')
+        elif isinstance(data, int):
+            databytes = bytes(data)
+        else:
+            databytes = data
+        print(f"data converted = {databytes}")
 
         # metadata of payload
-        recordlength = len(data) + 7
-        datalength = len(data) + 3
+        recordlength = len(databytes) + 7
+        datalength = len(databytes) + 3
 
         if recordlength > size:
             return "Failed: card size is too small for payload"
 
-        # convert data to bytes
-        databytes = bytes(data)
-        # print(f"data in bytes form = {databytes}")
-
         # build payload
-        payload = [3, recordlength, 209, 1, datalength, 84, 2, 101, 110] + list(data) + [254]
+        payload = [3, recordlength, 209, 1, datalength, 84, 2, 101, 110] + list(databytes) + [254]
         # print(f"payload data = {payload}")
 
         payloadlength = len(payload)
