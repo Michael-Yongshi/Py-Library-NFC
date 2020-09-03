@@ -127,7 +127,7 @@ class NFCconnection(object):
         hist_byte_count = ConvertingNumbers.hex_to_int(hist_byte_count_hex)
 
         atr_point_bit = ConvertingNumbers.int_to_bit(atr_point)
-        print(atr_point_bit)
+        # print(atr_point_bit)
 
         # 3 point: 
         # the block length
