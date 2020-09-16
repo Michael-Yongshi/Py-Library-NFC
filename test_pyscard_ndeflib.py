@@ -9,15 +9,16 @@ from pynfc.pyscard_ndeflib import (
 # decode hexstring payload to ndef text message
 array_of_strings = decode_message(b'\x91\x01\x08T\x02enHelloQ\x01\x08T\x02enWorld')
 print("")
-payload = encode_message_text(["Hello", "World"])
+payload_encoded = encode_message_text(["Hello", "World"])
 print("")
 
 nfcconnect = NFCconnection.initialize()
 nfcconnect.wipe_card()
-nfcconnect.write_card(data=payload)
+nfcconnect.write_card(data=payload_encoded)
 print("")
 
-received_payload = nfcconnect.read_card()
+payload_received = nfcconnect.read_card()
 print("")
 
-array_of_received = decode_message(received_payload)
+payload_decoded = decode_message(payload_received)
+print(payload_decoded)
