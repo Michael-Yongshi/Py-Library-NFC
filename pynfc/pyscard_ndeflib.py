@@ -19,47 +19,6 @@ from .class_conversions import (
     DecodingCharacter,
 )
 
-def decode_message(response):
-    """creates a list of records that is found on the card, expects a response in the form of a byte array that can be interpreted as ndef format"""
-
-    # print(f"input response = {response}")
-    
-    octets = response
-    # print(f"octets = {octets}")
-
-    decoder = ndef.message_decoder(octets)
-    # print(f"decoder = {decoder}")
-    
-    message = list(decoder)
-    # print(f"message = {message}")
-
-    for _ in decoder:
-        next(decoder)
-
-    return message
-
-
-def encode_message(data):
-    """creates an ndef encoding to write to the card, needs a data of a certain type to encode it to ndef format"""
-
-    print(f"trying to encode {data}")
-    # encode characters to bytes
-    databin= data.encode('utf-8')
-    # print(databin)
-    # ndeflib example
-    if isinstance(data, str):
-        record = ndef.new_message(data)
-    elif isinstance
-    # no clue yet why below works as it does. the last line actually returns / yields the record from the previous line
-    encoder = ndef.message_encoder()
-    encoder.send(None)
-    encoder.send(record)
-    payload = encoder.send(None)
-    # payload = ndef.message_encoder(record)
-    # print(f"encoded payload = {payload}")
-
-    return payload
-
 class NFCconnection(object):
     def __init__(self, cardservice, metadata):
         super().__init__()
@@ -301,13 +260,14 @@ class NFCconnection(object):
                 break
             elif idx > len(data) -4:
                 pass
-            elif [val, data[idx+1], data[idx+2], data[idx+3]] == [84, 2, 101, 110]:
-                index_start = idx+4
+            # elif [val, data[idx+1], data[idx+2], data[idx+3]] == [84, 2, 101, 110]:
+            #     index_start = idx+4
                 # print(index_start)
             else:
                 pass
         
-        payload = data[index_start:index_end]
+        print(f"Read payload in bytes: {data}")
+        payload = data[5:index_end]
         # print(f"payload is: {payload}")
 
         # decode payload
@@ -374,7 +334,7 @@ class NFCconnection(object):
             print("Failed: card size is too small for payload")
 
         # build payload
-        payload = [3, recordlength, 209, 1, datalength, 84, 2, 101, 110] + list(databytes) + [254]
+        payload = [3, recordlength, 209, 1, datalength] + list(databytes) + [254]
         print(f"payload data = {payload}")
 
         payloadlength = len(payload)
@@ -399,3 +359,40 @@ class NFCconnection(object):
         print(f"Success: NFC written to card: {payload}")
         return "Success"
 
+# NDEFlib decoder and encoder of simple text messages
+def decode_message(payload):
+
+    print(f"NDEF payload received: {payload}")
+    decoder = ndef.message_decoder(payload)
+
+    message = list(decoder)
+    print(f"NDEF message extracted: {message}")
+
+    array_of_strings = []
+    for record in message:
+        array_of_strings += [record.text]
+    print(f"Array of strings found: {array_of_strings}")
+
+    return message
+
+def encode_message_text(array_of_strings):
+    """
+    Receives an array of strings and returns a message that contains these in a bytearray that can be transferred to a NFC tag.
+    """
+
+    print(f"Array of strings send: {array_of_strings}")
+    
+    # create list of ndef records
+    message = []
+    for string in array_of_strings:
+        message += [ndef.TextRecord(string)]
+    print(f"NDEF Records created: {message}")
+
+    # create ndef encoder generator
+    encoder = ndef.message_encoder(message)
+
+    # convert ndef encoder to payload octets
+    payload = b''.join(encoder)
+    print(f"NDEF payload created: {payload}")
+
+    return payload 
