@@ -361,17 +361,40 @@ class NFCconnection(object):
 
 # NDEFlib decoder and encoder of simple text messages
 def decode_message(payload):
+    """
+    Returns all types of records found in the payload
+    """
 
     print(f"NDEF payload received: {payload}")
     decoder = ndef.message_decoder(payload)
 
-    message = list(decoder)
-    print(f"NDEF message extracted: {message}")
+    array_of_records = list(decoder)
+    print(f"NDEF records extracted: {array_of_records}")
 
-    array_of_strings = []
-    for record in message:
-        array_of_strings += [record.text]
-    print(f"Array of strings found: {array_of_strings}")
+    message = []
+    for record in array_of_records:
+        print(f"record type is {record.type}")
+        # message += [record.text]
+    print(f"Array of records found: {array_of_records}")
+
+    return message
+
+def decode_message_text(payload):
+    """
+    If you expect only a text returned from the payload
+    returns all the text records found, ignoring other records
+    """
+
+    print(f"NDEF payload received: {payload}")
+    decoder = ndef.message_decoder(payload)
+
+    array_of_records = list(decoder)
+    print(f"NDEF records extracted: {array_of_records}")
+
+    message = []
+    for record in array_of_records:
+        message += [record.text]
+    print(f"Messages found: {message}")
 
     return message
 
