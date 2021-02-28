@@ -1,6 +1,6 @@
 import ndef
 
-from pynfc.pyscard_ndeflib import (
+from pynfc.class_nfc import (
     NFCconnection,
     decode_message_text,
     encode_message_text,

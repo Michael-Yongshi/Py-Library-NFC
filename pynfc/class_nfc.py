@@ -267,7 +267,7 @@ class NFCconnection(object):
                 pass
         
         print(f"Read payload in bytes: {data}")
-        payload = data[5:index_end]
+        payload = data[2:index_end]
         # print(f"payload is: {payload}")
 
         # decode payload
@@ -327,14 +327,14 @@ class NFCconnection(object):
         print(f"data converted = {databytes}")
 
         # metadata of payload
-        recordlength = len(databytes) + 7
+        recordlength = len(databytes)
         datalength = len(databytes) + 3
 
         if recordlength > size:
             print("Failed: card size is too small for payload")
 
         # build payload
-        payload = [3, recordlength, 209, 1, datalength] + list(databytes) + [254]
+        payload = [3, recordlength] + list(databytes) + [254]
         print(f"payload data = {payload}")
 
         payloadlength = len(payload)
