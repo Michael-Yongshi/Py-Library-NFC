@@ -6,10 +6,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="yongshi-pynfc",
-    version="0.4.2",
+    version="0.4.3",
     author="Michael-Yongshi",
     author_email="4registration@outlook.com",
-    description="A nfc library for python",
+    description="A nfc library for python based solely on pyscard to communicate with the nfc card and ndeflib to arrange encoding and decoding of messages",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Michael-Yongshi/Py-Library-NFC",
@@ -25,5 +25,5 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.5',
+    python_requires='>=3.3',
 )
