@@ -5,6 +5,7 @@ import os
 import codecs
 
 import ndef
+import json
 
 from smartcard.ATR import ATR
 from smartcard.CardType import ATRCardType, AnyCardType
@@ -64,18 +65,18 @@ class NFCconnection(object):
     def get_reference_material(self):
 
         # # set the paths to the apdu reference file
-        # path = os.path.join(os.path.dirname(__file__)) # the same folder as caller
-        # filename = "nfc_communication"
-        # complete_path = os.path.join(path, filename + ".json")
+        path = os.path.join(os.path.dirname(__file__)) # the same folder as caller
+        filename = "nfc_communication"
+        complete_path = os.path.join(path, filename + ".json")
 
-        # # open file and return the dictionary
-        # with open(complete_path, 'r') as infile:
-        #     datadict = json.load(infile)
+        # open file and return the dictionary
+        with open(complete_path, 'r') as infile:
+            datadict = json.load(infile)
         
         # print(datadict)
         # return datadict
 
-        datadict = {'ATR (Anwser To Reset)': {'start byte': {'start': 0, 'end': 1}, 'historical byte count': {'start': 1, 'end': 2}, 'length': {'start': 6, 'end': 7}, 'Registered App Provider Identifiers (RIDs)': {'start': 7, 'end': 12, 'Known values': {'PC/SC Workgroup': ['0xa0', '0x0', '0x0', '0x3', '0x6'], '': ''}}, 'Standards': {'start': 12, 'end': 13, 'Known values': {'ISO14443A, Part3': ['0x3'], '': ''}}, 'Card Types': {'start': 13, 'end': 15, 'Known values': {'Mifare 1K': ['0x0', '0x1'], 'Mifare 4k': ['0x0', '0x2'], 'Mifare Ultralight': ['0x0', '0x3'], 'Mifare Mini': ['0x0', '0x26'], 'Topaz and Jewel': ['0xF0', '0x4'], 'Felica 212k': ['0xF0', '0x11'], 'Felica 424k': ['0xF0', '0x12']}}, 'Radio Frequency Units (RFUs)': {'start': 15, 'end': 19, 'Known values': {'Default setting': ['0x0', '0x0', '0x0', '0x0'], '': ''}}}, 'Mifare Ultralight': {'Identify': {'APDU_int': [255, 202, 0, 0, 0], 'APDU_hex': ['0xFF', '0xCA', '0x0', '0x0', '0x0'], 'Response': {}}, 'Read': {'APDU_int': [255, 176, 0, 'block', 4], 'APDU_hex': ['0xFF', '0xB0', '0x0', 'block', '0x4'], 'Response': {'text': {'start': {'block': 6, 'byte': 3}, 'end': {'type': 'encounter', 'at': 254}}}}, 'Write': {'APDU_int': [255, 214, 0, 'block', 4], 'APDU_hex': ['0xFF', '0xD6', '0x0', 'block', '0x4'], 'Response': {'text': {'start': {'block': 6, 'byte': 3}, 'end': {'type': 'encounter', 'at': 254}}}}}}
+        # datadict = {'ATR (Anwser To Reset)': {'start byte': {'start': 0, 'end': 1}, 'historical byte count': {'start': 1, 'end': 2}, 'length': {'start': 6, 'end': 7}, 'Registered App Provider Identifiers (RIDs)': {'start': 7, 'end': 12, 'Known values': {'PC/SC Workgroup': ['0xa0', '0x0', '0x0', '0x3', '0x6'], '': ''}}, 'Standards': {'start': 12, 'end': 13, 'Known values': {'ISO14443A, Part3': ['0x3'], '': ''}}, 'Card Types': {'start': 13, 'end': 15, 'Known values': {'Mifare 1K': ['0x0', '0x1'], 'Mifare 4k': ['0x0', '0x2'], 'Mifare Ultralight': ['0x0', '0x3'], 'Mifare Mini': ['0x0', '0x26'], 'Topaz and Jewel': ['0xF0', '0x4'], 'Felica 212k': ['0xF0', '0x11'], 'Felica 424k': ['0xF0', '0x12']}}, 'Radio Frequency Units (RFUs)': {'start': 15, 'end': 19, 'Known values': {'Default setting': ['0x0', '0x0', '0x0', '0x0'], '': ''}}}, 'Mifare Ultralight': {'Identify': {'APDU_int': [255, 202, 0, 0, 0], 'APDU_hex': ['0xFF', '0xCA', '0x0', '0x0', '0x0'], 'Response': {}}, 'Read': {'APDU_int': [255, 176, 0, 'block', 4], 'APDU_hex': ['0xFF', '0xB0', '0x0', 'block', '0x4'], 'Response': {'text': {'start': {'block': 6, 'byte': 3}, 'end': {'type': 'encounter', 'at': 254}}}}, 'Write': {'APDU_int': [255, 214, 0, 'block', 4], 'APDU_hex': ['0xFF', '0xD6', '0x0', 'block', '0x4'], 'Response': {'text': {'start': {'block': 6, 'byte': 3}, 'end': {'type': 'encounter', 'at': 254}}}}}}
 
         # print(datadict)
         return datadict
@@ -277,6 +278,24 @@ class NFCconnection(object):
 
         return data
 
+    def read_card_raw(self, page=4):
+        '''
+        Read raw data from the card
+        '''
+        size = self.metadata["Size"]
+        apdu_command = self.get_apdu_command("Read")
+        apdu_command[3] = page
+        response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
+        # print(f"page: {page}, response: {response}, status words: {sw1} : {sw2}")
+        if sw1 == 99:
+            print(f"Failed reading card at page {page}, response {response}, sw1 {sw1}, sw2 {sw2}")
+            return
+        print(f"read data:{response}")
+        data = bytes(response)
+
+        return data
+
+
     def wipe_card(self):
 
         # get size of card
@@ -335,7 +354,8 @@ class NFCconnection(object):
 
         # build payload
         payload = [3, recordlength] + list(databytes) + [254]
-        print(f"payload data = {payload}")
+        payloadx = [hex(d) for d in payload]
+        print(f"payload data = {payloadx}")
 
         payloadlength = len(payload)
         page = 4
@@ -358,6 +378,62 @@ class NFCconnection(object):
 
         print(f"Success: NFC written to card: {payload}")
         return "Success"
+
+    def write_card_raw(self, data, pagestart = 4):
+        '''
+        Write raw data into the card
+        '''
+
+        # get size of card
+        size = self.metadata["Size"]
+
+        # Handshake with card 
+        self.get_card_uid()
+
+        # Convert to bytes if necessary
+        print(f"raw data to be written = {data}")
+        if isinstance(data, str):
+            databytes = bytes(data, 'utf-8')
+        elif isinstance(data, list):
+            databytes = bytes(data)
+        else:
+            databytes = data
+        print(f"data converted = {databytes}")
+
+        # metadata of payload
+        recordlength = len(databytes)
+        datalength = len(databytes) + 3
+
+        if recordlength > size:
+            print("Failed: card size is too small for payload")
+
+        # build payload
+        payload = list(databytes)
+        payloadx = [hex(d) for d in payload]
+        print(f"payload data = {payloadx}")
+
+        payloadlength = len(payload)
+        page = pagestart
+        for i in range(0, payloadlength - 1, 4):
+            # prepare data command
+            write_command = self.get_apdu_command("Write")
+            write_command[3] = page
+            payload_part = payload[i:i+4]
+            apdu = write_command + payload_part
+            # print(f"apdu = {apdu}")
+            # apdu_hex = ConvertingArrays.array_conversion(apdu, "int_to_hex")
+            # print(f"apdu in hex = {apdu_hex}")
+
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu)
+            # print(f"response: {response}, sw1 = {sw1}, sw2 = {sw2}")
+            if sw1 == 99:
+                print(f"Failed: NFC write error sending {payload_part} at page {page}: response: {response} and status codes {sw1} and {sw2}")
+                return "Failed"
+            page += 1
+
+        print(f"Success: NFC written to card: {payload}")
+        return "Success"
+
 
 # NDEFlib decoder and encoder of simple text messages
 def decode_message(payload):
