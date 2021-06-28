@@ -13,6 +13,7 @@ from smartcard.CardRequest import CardRequest
 from smartcard.CardConnection import CardConnection
 from smartcard.System import readers
 from smartcard.util import toBytes
+from time import sleep
 
 from .class_conversions import (
     ConvertingArrays,
@@ -51,7 +52,8 @@ class NFCconnection(object):
             cardservice = cardservice,
             metadata = {},
         )
-
+        nfc_connection.metadata['reader'] = reader
+        sleep(0.1) # to make next command more robust
         # get metadata
         nfc_connection.get_card_atr_info()
         nfc_connection.get_card_uid()
@@ -59,7 +61,9 @@ class NFCconnection(object):
         
         uid = nfc_connection.metadata["UID"]
         size = nfc_connection.metadata["Size"]
-        print(f"Success: NFC Connection identified as {uid} with size {size}")
+        card_type = nfc_connection.metadata['ATR']['card_type']
+        card_subtype = nfc_connection.metadata['ATR']['card_subtype']
+        print(f"Success: NFC Connection identified as {uid} with size {size},card:{card_type}/{card_subtype}")
 
         return nfc_connection
 
@@ -162,42 +166,48 @@ class NFCconnection(object):
         
         if card_type == "Unknown":
             card_type += f" - card name code: -{card_type_string}-"
-
+        size = 0
         subtype = "Unknown"
-        if card_type == "Mifare Ultralight EV1" : # only using omnikey 5022CL
-            size = 144
-            data_hex = "FF680E030B1F08000000000000000060"
+        if card_type in ["Mifare Ultralight EV1","Mifare Ultralight"]: # only using omnikey 5022CL
+            offset = 2
+            data_hex = "FF"
+            if "OMNIKEY 5022" in self.metadata["reader"]: 
+                data_hex = "FF680E030B1F08000000000000000060"
+            elif "ACR122U" in self.metadata["reader"]:
+                offset = 3
+                data_hex = "FF00000003D44260"
+
             data = toBytes(data_hex)
             apdu_command = data
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
             if sw1 == 144:
-                (vender_id, product_type,product_subtype, major_version, storage_code) = (response[3],response[4],response[5],response[6],response[8])
+                (vender_id, product_type,product_subtype, major_version, storage_code) = (response[offset + 1],
+                    response[offset + 2 ],response[offset+3],response[offset+4],response[offset+6])
                 if vender_id == 4:
                     vender = "NXP" 
                 if product_type == 4: # General NTAG
-                    size = 0
                     subtype = "NTAG"
                     if major_version == 1: # NTAG210, 212,213,215,216
                         if product_subtype == 0x01: # 17pF ,NTAG210,212
                             if storage_code == 0x0B:
-                                subtype == "NTAG210"
+                                subtype = "NTAG210"
                                 size = 48
                             if storage_code == 0x0E:
-                                subtype == "NTAG212"
+                                subtype = "NTAG212"
                                 size = 128
                         if product_subtype == 0x02: # 50pF, NTAG213,215,216
                             if storage_code == 0x0F:
-                                subtype == "NTAG213"
+                                subtype = "NTAG213"
                                 size = 144 
                             if storage_code == 0x11:
-                                subtype == "NTAG215"
+                                subtype = "NTAG215"
                                 size = 504
                             if storage_code == 0x13:
-                                subtype == "NTAG216"
+                                subtype = "NTAG216"
                                 size = 888
                     if major_version == 3: #NTAG213TT
                         if storage_code == 0x0F:
-                            subtype == "NTAG213TT"
+                            subtype = "NTAG213TT"
                             size =  144
 
         # something to do with clock frequencies, are often left at 0 to set default setting.
@@ -217,9 +227,8 @@ class NFCconnection(object):
 
         atr_info = {"ATRraw": atr, "hist byte count": hist_byte_count, "length": length, "rid": rid, "standard": standard, 
                     "card_type": card_type, "rfu": rfu,"card_subtype":subtype}
-        self.metadata = {"ATR": atr_info}
-        if size:
-            self.metadata.update({"Size": size})
+        self.metadata.update({"ATR": atr_info})
+        self.metadata.update({"Size": size})
 
 
     def get_card_uid(self):
@@ -482,7 +491,7 @@ class NFCconnection(object):
     
     def send_raw_command(self, data):
         response, sw1, sw2 = self.cardservice.connection.transmit(data)
-        if sw1 != 90:
+        if sw1 != 144:
             print(f"Failed sending raw command. sw1,sw2: {sw1},{sw2}")
             return "Failed"
         return bytes(response)
