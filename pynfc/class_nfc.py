@@ -173,7 +173,7 @@ class NFCconnection(object):
             data_hex = "FF"
             if "OMNIKEY 5022" in self.metadata["reader"]: 
                 data_hex = "FF680E030B1F08000000000000000060"
-            elif "ACR122U" in self.metadata["reader"]:
+            elif "ACR122" in self.metadata["reader"]:
                 offset = 3
                 data_hex = "FF00000003D44260"
 
@@ -248,7 +248,7 @@ class NFCconnection(object):
 
         card_type = self.metadata["ATR"]["card_type"]
         subtype = self.metadata["ATR"]["card_subtype"]
-        if card_type == "Mifare Ultralight EV1" and "NTAG" in subtype:
+        if card_type in ["Mifare Ultralight EV1","Mifare Ultralight"] and "NTAG" in subtype:
             return
         # retrieving length of card
         page = 1
