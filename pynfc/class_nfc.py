@@ -168,7 +168,7 @@ class NFCconnection(object):
             card_type += f" - card name code: -{card_type_string}-"
         size = 0
         subtype = "Unknown"
-        if card_type in ["Mifare Ultralight EV1","Mifare Ultralight"]: # only using omnikey 5022CL
+        if card_type in ["Mifare Ultralight EV1","Mifare Ultralight"]: # only tested on omnikey 5022CL and ACR122U
             offset = 2
             data_hex = "FF"
             if "OMNIKEY 5022" in self.metadata["reader"]: 
