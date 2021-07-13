@@ -35,6 +35,7 @@
                 "Mifare 1K": ["0x0", "0x1"],
                 "Mifare 4k": ["0x0", "0x2"],
                 "Mifare Ultralight": ["0x0", "0x3"],
+				"Mifare Ultralight EV1": ["0x0","0x3d"],
                 "Mifare Mini": ["0x0", "0x26"],
                 "Topaz and Jewel": ["0xF0", "0x4"],
                 "Felica 212k": ["0xF0", "0x11"],
@@ -59,6 +60,45 @@
         "Read": {
             "APDU_int": [255, 176, 0, "block", 4],
             "APDU_hex": ["0xFF", "0xB0", "0x0", "block", "0x4"],
+            "Response": {
+                "text": {
+                    "start": {
+                        "block": 6,
+                        "byte": 3
+                    },
+                    "end": {
+                        "type": "encounter",
+                        "at": 254
+                    }
+                }
+            }
+        },
+        "Write": {
+            "APDU_int": [255, 214, 0, "block", 4],
+            "APDU_hex": ["0xFF", "0xD6", "0x0", "block", "0x4"],
+            "Response": {
+                "text": {
+                    "start": {
+                        "block": 6,
+                        "byte": 3
+                    },
+                    "end": {
+                        "type": "encounter",
+                        "at": 254
+                    }
+                }
+            }
+        }
+    },
+    "Mifare Ultralight EV1": {
+        "Identify": {
+            "APDU_int": [255, 202, 0, 0, 0],
+            "APDU_hex": ["0xFF", "0xCA", "0x0", "0x0", "0x0"],
+            "Response": {}
+        },
+        "Read": {
+            "APDU_int": [255, 176, 0, "block",  16],
+            "APDU_hex": ["0xFF", "0xB0", "0x0", "block", "0x10"],
             "Response": {
                 "text": {
                     "start": {
