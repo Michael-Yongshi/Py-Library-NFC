@@ -90,6 +90,7 @@ Fixes for Android app compatibility
 ## Authors
 
 * **Michael-Yongshi** 
+Many thanks to the contributions of user JJCC (https://github.com/jjcc)
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
