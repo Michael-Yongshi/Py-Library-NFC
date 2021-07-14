@@ -256,8 +256,6 @@ class NFCconnection(object):
 
         card_type = self.metadata["ATR"]["card_type"]
         subtype = self.metadata["ATR"]["card_subtype"]
-        if card_type in ["Mifare Ultralight EV1","Mifare Ultralight"] and "NTAG" in subtype:
-            return
 
         # retrieving length of card
         page = 1
@@ -267,9 +265,16 @@ class NFCconnection(object):
             apdu_command[3] = page
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
             page += 1
-        size = page - 7
+        pages = page - 10
+        print(f"size in pages = {pages}")
 
-        self.metadata.update({"Size": size})
+        size = pages * 4
+        print(f"size in bytes = {size}")
+
+        if card_type in ["Mifare Ultralight EV1","Mifare Ultralight"] and "NTAG" in subtype:
+            return
+        else:
+            self.metadata.update({"Size": size})
 
     def get_apdu_command(self, function):
 
@@ -293,6 +298,7 @@ class NFCconnection(object):
 
         # get size of card
         size = self.metadata["Size"]
+        pages = size / 4
         # print(size)
 
         # Handshake with card 
@@ -301,7 +307,7 @@ class NFCconnection(object):
         # retrieving raw data (integer array) from card
         data = []
         page = 4
-        while page <= size: # read only the relative to the size of the card (leave the last 5 pages alone, they are not data fields, but are writable)
+        while page <= pages: # read only the relative to the size of the card (leave the last 5 pages alone, they are not data fields, but are writable)
             
             data += self.read_card_raw(page=page)
             page += 1
@@ -403,10 +409,14 @@ class NFCconnection(object):
         if recordlength > size:
             print("Failed: card size is too small for payload")
 
-        self.write_card_raw(databytes=databytes)
+        result = self.write_card_raw(databytes=databytes)
 
-        print(f"Success: data written to card: {data}")
-        return "Success"
+        if result == "Success":
+            print(f"Success: data written to card: {data}")
+            return "Success"
+        else:
+            print(f"Failed")
+            return "Failed"
 
     def write_card_raw(self, databytes, pagestart = 4):
         '''

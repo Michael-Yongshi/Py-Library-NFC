@@ -1,12 +1,13 @@
-from pynfc.class_nfc import NFCconnection
+from pynfc.class_nfc import NFCconnection, decode_message, decode_message_text, encode_message_text
 
 if __name__ == '__main__':
 
     nfcconnect = NFCconnection.initialize()
-    read = nfcconnect.read_card()
-    print(read)
 
-    plaindata = "string"
+    read = nfcconnect.read_card()
+    print(f"read card with {read}")
+
+    plaindata = "stringie"
     nfcconnect.write_card(data=plaindata)
 
     integerdata = 582
