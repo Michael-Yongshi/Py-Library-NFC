@@ -174,40 +174,46 @@ class NFCconnection(object):
 
         subtype = "Unknown"
         size = None
-        if card_type == "Mifare Ultralight EV1" : # only using omnikey 5022CL
-            size = 144
-            data_hex = "FF680E030B1F08000000000000000060"
+        if card_type in ["Mifare Ultralight EV1","Mifare Ultralight"]: # only using omnikey 5022CL
+            offset = 2
+            data_hex = "FF"
+            if "OMNIKEY 5022" in self.metadata["reader"]: 
+                data_hex = "FF680E030B1F08000000000000000060"
+            elif "ACR122U" in self.metadata["reader"]:
+                offset = 3
+                data_hex = "FF00000003D44260"
+
             data = toBytes(data_hex)
             apdu_command = data
             response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
             if sw1 == 144:
-                (vender_id, product_type,product_subtype, major_version, storage_code) = (response[3],response[4],response[5],response[6],response[8])
+                (vender_id, product_type,product_subtype, major_version, storage_code) = (response[offset + 1],
+                    response[offset + 2 ],response[offset+3],response[offset+4],response[offset+6])
                 if vender_id == 4:
                     vender = "NXP" 
                 if product_type == 4: # General NTAG
-                    size = 0
                     subtype = "NTAG"
                     if major_version == 1: # NTAG210, 212,213,215,216
                         if product_subtype == 0x01: # 17pF ,NTAG210,212
                             if storage_code == 0x0B:
-                                subtype == "NTAG210"
+                                subtype = "NTAG210"
                                 size = 48
                             if storage_code == 0x0E:
-                                subtype == "NTAG212"
+                                subtype = "NTAG212"
                                 size = 128
                         if product_subtype == 0x02: # 50pF, NTAG213,215,216
                             if storage_code == 0x0F:
-                                subtype == "NTAG213"
+                                subtype = "NTAG213"
                                 size = 144 
                             if storage_code == 0x11:
-                                subtype == "NTAG215"
+                                subtype = "NTAG215"
                                 size = 504
                             if storage_code == 0x13:
-                                subtype == "NTAG216"
+                                subtype = "NTAG216"
                                 size = 888
                     if major_version == 3: #NTAG213TT
                         if storage_code == 0x0F:
-                            subtype == "NTAG213TT"
+                            subtype = "NTAG213TT"
                             size =  144
 
         # something to do with clock frequencies, are often left at 0 to set default setting.
