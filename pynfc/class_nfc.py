@@ -435,6 +435,13 @@ class NFCconnection(object):
         print(f"Success: NFC written to card: {payload}")
         return "Success"
 
+    def send_raw_command(self, data):
+        response, sw1, sw2 = self.cardservice.connection.transmit(data)
+        if sw1 != 90:
+            print(f"Failed sending raw command. sw1,sw2: {sw1},{sw2}")
+            return "Failed"
+        return bytes(response)
+
 def convert_data_to_bytes(data):
 
     # Convert to bytes if necessary
