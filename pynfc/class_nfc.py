@@ -12,6 +12,7 @@ from smartcard.CardType import ATRCardType, AnyCardType
 from smartcard.CardRequest import CardRequest
 from smartcard.CardConnection import CardConnection
 from smartcard.System import readers
+from smartcard.util import toBytes
 
 from .class_conversions import (
     ConvertingArrays,
@@ -162,6 +163,44 @@ class NFCconnection(object):
         if card_type == "Unknown":
             card_type += f" - card name code: -{card_type_string}-"
 
+        subtype = "Unknown"
+        size = None
+        if card_type == "Mifare Ultralight EV1" : # only using omnikey 5022CL
+            size = 144
+            data_hex = "FF680E030B1F08000000000000000060"
+            data = toBytes(data_hex)
+            apdu_command = data
+            response, sw1, sw2 = self.cardservice.connection.transmit(apdu_command)
+            if sw1 == 144:
+                (vender_id, product_type,product_subtype, major_version, storage_code) = (response[3],response[4],response[5],response[6],response[8])
+                if vender_id == 4:
+                    vender = "NXP" 
+                if product_type == 4: # General NTAG
+                    size = 0
+                    subtype = "NTAG"
+                    if major_version == 1: # NTAG210, 212,213,215,216
+                        if product_subtype == 0x01: # 17pF ,NTAG210,212
+                            if storage_code == 0x0B:
+                                subtype == "NTAG210"
+                                size = 48
+                            if storage_code == 0x0E:
+                                subtype == "NTAG212"
+                                size = 128
+                        if product_subtype == 0x02: # 50pF, NTAG213,215,216
+                            if storage_code == 0x0F:
+                                subtype == "NTAG213"
+                                size = 144 
+                            if storage_code == 0x11:
+                                subtype == "NTAG215"
+                                size = 504
+                            if storage_code == 0x13:
+                                subtype == "NTAG216"
+                                size = 888
+                    if major_version == 3: #NTAG213TT
+                        if storage_code == 0x0F:
+                            subtype == "NTAG213TT"
+                            size =  144
+
         # something to do with clock frequencies, are often left at 0 to set default setting.
         rfu = "Unknown"
         info = "Radio Frequency Units (RFUs)"
@@ -177,8 +216,13 @@ class NFCconnection(object):
         if rfu == "Unknown":
             rfu += f" - card name code: -{rfu_string}-"
 
-        atr_info = {"ATRraw": atr, "hist byte count": hist_byte_count, "length": length, "rid": rid, "standard": standard, "card_type": card_type, "rfu": rfu}
+        atr_info = {"ATRraw": atr, "hist byte count": hist_byte_count, "length": length, "rid": rid, "standard": standard, 
+        "card_type": card_type, "rfu": rfu, "card_subtype": subtype}
+
         self.metadata = {"ATR": atr_info}
+
+        if size != None:
+            self.metadata.update({"Size": size})
 
     def get_card_uid(self):
 
@@ -194,6 +238,11 @@ class NFCconnection(object):
         self.metadata.update({"UID": response})
 
     def get_card_size(self):
+
+        card_type = self.metadata["ATR"]["card_type"]
+        subtype = self.metadata["ATR"]["card_subtype"]
+        if card_type == "Mifare Ultralight EV1" and "NTAG" in subtype:
+            return
 
         # retrieving length of card
         page = 1
