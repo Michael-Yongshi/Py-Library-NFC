@@ -1,5 +1,10 @@
 # Py_Library_NFC
-a library to interact with nfc cards and readers from python using pyscard and ndeflib
+A library can be used to interact with nfc cards and readers
+
+Standalone code takes care of converting the data (strings, integers, bytes, ndef messages) to a bytearray that can be written to the card and reader.
+Pyscard is used to actually transfer / read the bytes to / from the card.
+Ndeflib is used to format according to the NDEF message standards.
+
 
 ## Roadmap
 
