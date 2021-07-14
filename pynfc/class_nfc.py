@@ -452,7 +452,7 @@ class NFCconnection(object):
 
     def send_raw_command(self, data):
         response, sw1, sw2 = self.cardservice.connection.transmit(data)
-        if sw1 != 90:
+        if sw1 != 144:
             print(f"Failed sending raw command. sw1,sw2: {sw1},{sw2}")
             return "Failed"
         return bytes(response)
