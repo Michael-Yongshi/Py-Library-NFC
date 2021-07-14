@@ -6,6 +6,7 @@ import codecs
 
 import ndef
 import json
+from time import sleep
 
 from smartcard.ATR import ATR
 from smartcard.CardType import ATRCardType, AnyCardType
@@ -52,6 +53,12 @@ class NFCconnection(object):
             metadata = {},
         )
 
+        # add reader info to object
+        nfc_connection.metadata['reader'] = reader
+
+        # to make next command more robust
+        sleep(0.1)
+
         # get metadata
         nfc_connection.get_card_atr_info()
         nfc_connection.get_card_uid()
@@ -59,7 +66,9 @@ class NFCconnection(object):
 
         uid = nfc_connection.metadata["UID"]
         size = nfc_connection.metadata["Size"]
-        print(f"Success: NFC Connection identified as {uid} with size {size}")
+        card_type = nfc_connection.metadata['ATR']['card_type']
+        card_subtype = nfc_connection.metadata['ATR']['card_subtype']
+        print(f"Success: NFC Connection identified as {uid} with size {size},card:{card_type}/{card_subtype}")
 
         return nfc_connection
 
