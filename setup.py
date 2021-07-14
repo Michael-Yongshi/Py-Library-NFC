@@ -6,10 +6,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="yongshi-pynfc",
-    version="0.4.3",
+    version="0.4.4",
     author="Michael-Yongshi",
     author_email="4registration@outlook.com",
-    description="A nfc library for python based solely on pyscard to communicate with the nfc card and ndeflib to arrange encoding and decoding of messages",
+    description="A library can be used to interact with nfc cards and readers.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Michael-Yongshi/Py-Library-NFC",
