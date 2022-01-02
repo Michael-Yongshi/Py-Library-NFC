@@ -439,6 +439,13 @@ class NFCconnection(object):
 
         # write the payload page by page
         payloadlength = len(payload)
+
+        # pad payload with zeros if necessary
+        remainder = payloadlength % 4
+        if remainder != 0:
+            pad_length = 4 - remainder
+            payload += [0] * pad_length
+
         page = pagestart
         for i in range(0, payloadlength - 1, 4):
             # prepare data command
