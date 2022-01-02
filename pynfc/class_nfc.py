@@ -391,7 +391,7 @@ class NFCconnection(object):
         print(f"Success: NFC card is wiped")
         return "Success"
 
-    def write_card(self, data):
+    def write_card(self, data, encoding = True):
         """
         checks payload and card before writing raw data to card for a default writing action
         """
@@ -405,6 +405,10 @@ class NFCconnection(object):
 
         # metadata of payload
         recordlength = len(databytes)
+        if encoding:
+        # if encoding is true, then the payload is wrapped with a header,length and end marker
+            payload = [3, recordlength] + list(databytes) + [254]
+            databytes = bytes(payload)
 
         if recordlength > size:
             print("Failed: card size is too small for payload")
