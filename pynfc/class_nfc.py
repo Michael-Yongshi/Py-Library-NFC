@@ -310,7 +310,7 @@ class NFCconnection(object):
         while page <= pages: # read only the relative to the size of the card (leave the last 5 pages alone, they are not data fields, but are writable)
             
             data += self.read_card_raw(page=page)
-            page += 1
+            page += 4
 
         # print(f"{page - 1} pages read")
 
